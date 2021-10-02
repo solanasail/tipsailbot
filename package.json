@@ -1,0 +1,15 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@solana/spl-token": "^0.1.8",
+    "@solana/web3.js": "^1.29.1",
+    "axios": "^0.21.4",
+    "discord.js": "^13.1.0",
+    "domino": "^2.1.6",
+    "dotenv": "^10.0.0",
+    "keyv": "^4.0.3",
+    "node-phantom": "^0.2.5",
+    "open": "^8.2.1",
+    "socket.io": "^4.2.0"
+  }
+}
