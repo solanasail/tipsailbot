@@ -58,7 +58,7 @@ bot.on('messageCreate', async (message) => {
     message.member.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
     return;
   } else if (command == "help") { // Display help.
-    message.channel.send(".register-wallet\n.balance\n.tip <user> <amount>\n.tipsail <user> <amount>\n.tipgsail <user> <amount>");
+    message.channel.send(".register-wallet\n.balance\n.tipsol <user> <amount>\n.tipsail <user> <amount>\n.tipgsail <user> <amount>");
     return;
   }
 
@@ -86,7 +86,7 @@ bot.on('messageCreate', async (message) => {
 
     message.channel.send(`Address: ${publicKey}\nBalance: ${sol} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
     return;
-  } else if (command == "tip") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
+  } else if (command == "tipsol") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
     let splitId = (/(\d+)/).exec(args[0]);
     if (!splitId) {
       message.channel.send(`${args[0]} doen't exist`);
