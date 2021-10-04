@@ -1,4 +1,3 @@
-import { CLUSTERS } from '../config/index.js';
 import SessionStorageService from './SessionStorageService.js';
 
 const login = async (id, privateKey, publicKey, cluster) => {

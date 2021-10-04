@@ -1,20 +1,20 @@
-import { CLUSTERS } from './src/config/index.js';
-// var web3 = require('@solana/web3.js');
-import solanaConnect from './src/solana/index.js';
-// var splToken = require('@solana/spl-token');
-// let Wallet = require('./src/wallet/index.js');
-import Wallet from './src/wallet/index.js';
-import PriceService from './src/price/PriceService.js';
-import { Client } from 'discord.js';
+import solanaConnect from './src/solana/index.js'
+import Wallet from './src/wallet/index.js'
+import PriceService from './src/price/PriceService.js'
 
-import { COMMAND_PREFIX } from './src/config/index.js';
-import wallet from './src/wallet/index.js';
+import { Client} from 'discord.js'
 
-const bot = new Client({ intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"], partials: ["CHANNEL"] });
+import wallet from './src/wallet/index.js'
+
+import { CLUSTERS, COMMAND_PREFIX, DISCORD_TOKEN } from './config/index.js'
 
 let cluster = CLUSTERS.DEVNET;
 
-bot.on('ready', () => {
+// Create a new discord bot instance
+const bot = new Client({ intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"], partials: ["CHANNEL"] });
+
+// When the client is ready, run this code
+bot.once('ready', () => {
   console.log(`Logged in as ${bot.user.tag}!`);
 });
   
@@ -31,23 +31,34 @@ bot.on('messageCreate', async (message) => {
   let command = args[0];
   args = args.slice(1)
 
-  if (command == "help") { // Display help.
-    message.channel.send(".register-wallet\n.balance\n.airdrop <amount>\n.tip <user> <amount>");
-    return;
-  } else if (command == "register-wallet") { // Register wallet.
+  if (command == "register-wallet") { // Register wallet.
     // create new keypair.
     let account = await solanaConnect.createWallet(cluster);
 
     // login with keypair.
     await Wallet.login(message.author.id, account.privateKey, account.publicKey, cluster);
     
-    const sol = await solanaConnect.getBalance(account.publicKey, cluster);
+    // get the balance of sol
+    const sol = await solanaConnect.getSolBalance(account.publicKey, cluster);
+
+    // get the balance of gSAIL
+    const gSAIL = await solanaConnect.getGSAILBalance(account.privateKey, cluster);
+
+    // get the balance of SAIL
+    const SAIL = await solanaConnect.getSAILBalance(account.privateKey, cluster);
+
+    // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol);
 
-    message.member.send(`Cluster: ${cluster}`);
-    message.member.send(`Address: ${account.publicKey}`);
-    message.member.send(`Balance: ${sol} SOL (~${dollarValue}$)`);
-    message.member.send(`[${account.privateKey}]`);
+    if (message.channel.type == "DM") {
+      message.channel.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
+      return
+    }
+
+    message.member.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
+    return;
+  } else if (command == "help") { // Display help.
+    message.channel.send(".register-wallet\n.balance\n.tip <user> <amount>\n.tipsail <user> <amount>\n.tipgsail <user> <amount>");
     return;
   }
 
@@ -61,21 +72,34 @@ bot.on('messageCreate', async (message) => {
   let publicKey = await Wallet.isLoggedIn(message.author.id);
 
   if (command == "balance") { // See your current available and pending balance.  
-    const sol = await solanaConnect.getBalance(publicKey, cluster);
+    // get the balance of sol
+    const sol = await solanaConnect.getSolBalance(publicKey, cluster);
+
+    // get the balance of gSAIL
+    const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id), cluster);
+
+    // get the balance of SAIL
+    const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id), cluster);
+
+    // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol);
 
-    message.channel.send(`Address: ${publicKey}\nBalance: ${sol} SOL ${dollarValue ? `(~$${dollarValue})` : ''}`);
+    message.channel.send(`Address: ${publicKey}\nBalance: ${sol} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
     return;
   } else if (command == "tip") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
-    let recipientId = (/(\d+)/).exec(args[0])[1];
-    
-    console.log(args[0]);
-    console.log(recipientId);
+    let splitId = (/(\d+)/).exec(args[0]);
+    if (!splitId) {
+      message.channel.send(`${args[0]} doen't exist`);
+      return;
+    }
 
-    const sol = await solanaConnect.getBalance(publicKey, cluster);
+    let recipientId = splitId[1];
 
-    if (sol - args[1] <= 0.05) {
-      message.channel.send(`Not enough SOL`);
+    // get the balance of sol
+    const sol = await solanaConnect.getSolBalance(publicKey, cluster);
+
+    if (sol - args[1] < 0.05) {
+      message.channel.send(`Not enough SOL.`);
       return;
     }
 
@@ -86,15 +110,80 @@ bot.on('messageCreate', async (message) => {
     
     await solanaConnect.transfer(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.isLoggedIn(recipientId), args[1]);
 
-    message.channel.send(`I sent the ${args[1]} SOL to wallet.`)
+    message.channel.send(`I sent the ${args[1]} SOL.`)
     return;
-  } else if (command == "withdraw") { // $withdraw <amount>: Withdraws <amount> to your registered withdrawal address.
+  } else if (command == "tipsail") {
+    let splitId = (/(\d+)/).exec(args[0]);
+    if (!splitId) {
+      message.channel.send(`${args[0]} doen't exist`);
+      return;
+    }
+
+    let recipientId = splitId[1];
+
+    // get the balance of sol
+    const sol = await solanaConnect.getSolBalance(publicKey, cluster);
+
+    if (sol < 0.001) {
+      message.channel.send(`Not enough SOL fee to tip the SAIL`);
+      return;
+    }
+
+    const SAIL = await solanaConnect.getSAILBalance(await wallet.getPrivateKey(message.author.id), cluster);
+
+    if (args[1] > SAIL.amount) {
+      message.channel.send(`Not enough SAIL.`)
+      return;
+    }
+
+    if (!await Wallet.isLoggedIn(recipientId)) {
+      message.channel.send(`Recipient dosn't have the wallet.`)
+      return;
+    }
+
+    await solanaConnect.transferSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.isLoggedIn(recipientId), args[1]);
+
+    message.channel.send(`I sent the ${args[1]} SAIL.`)
+    return;
+  } else if (command == "tipgsail") {
+    let splitId = (/(\d+)/).exec(args[0]);
+    if (!splitId) {
+      message.channel.send(`${args[0]} doen't exist`);
+      return;
+    }
+
+    let recipientId = splitId[1];
+
+    // get the balance of sol
+    const sol = await solanaConnect.getSolBalance(publicKey, cluster);
+
+    if (sol < 0.001) {
+      message.channel.send(`Not enough SOL fee to tip the GSAIL`);
+      return;
+    }
+
+    const gSAIL = await solanaConnect.getGSAILBalance(await wallet.getPrivateKey(message.author.id), cluster);
+
+    if (args[1] > gSAIL.amount) {
+      message.channel.send(`Not enough gSAIL.`)
+      return;
+    }
+
+    if (!await Wallet.isLoggedIn(recipientId)) {
+      message.channel.send(`Recipient dosn't have the wallet.`)
+      return;
+    }
+
+    await solanaConnect.transferGSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.isLoggedIn(recipientId), args[1]);
+
+    message.channel.send(`I sent the ${args[1]} gSAIL.`)
     return;
   }
 });
 
 try {
-  bot.login('ODkyMTI0Mzk1MDg5Mjk3NDg4.YVIVlg.ZOycFiSPymyjdGEr_-09oEXtzL0'); 
+  // Login to Discord with your bot's token
+  bot.login(DISCORD_TOKEN); 
 } catch (e) {
   console.error('Bot has failed to connect to discord.');
   process.exit(1);
