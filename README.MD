@@ -50,7 +50,8 @@ Provides the current USD value of SOL and some other price-related functions.
 2. run `npm install @solana/web3.js`
 3. run `npm install @solana/spl-token`
 4. run `npm install discord.js axios dotenv`
-5. add a new `config` folder, inside `config`, add an `index.js` file inside with the following content (DO NOT COMMIT THIS config folder. JUST IGNORE):
+5. run `npm install base58`
+6. add a new `config` folder, inside `config`, add an `index.js` file inside with the following content (DO NOT COMMIT THIS config folder. JUST IGNORE):
   ```
     export const CLUSTERS = {
       MAINNET: 'mainnet-beta',
@@ -65,4 +66,4 @@ Provides the current USD value of SOL and some other price-related functions.
     export const gSAIL_TOKEN_ADDRESS=''
     export const SAIL_TOKEN_ADDRESS=''
   ```
-6. Open the cmd and type `node index.js`
+7. Open the cmd and type `node index.js`
