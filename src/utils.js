@@ -1,9 +1,14 @@
 import Base58 from 'bs58'
 
 const string2Uint8Array = async (str) => {
-  var decodedString = Base58.decode(str);
+  var decodedString;
+  try {
+    decodedString = Base58.decode(str);
+  } catch (error) {
+    return [];
+  }
   let arr = [];
-
+  
   for(var i = 0; i < decodedString.length; i++){
     arr.push(decodedString[i]);
   };
