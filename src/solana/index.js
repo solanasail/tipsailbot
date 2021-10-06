@@ -12,6 +12,23 @@ const createWallet = async (cluster) => {
   };
 };
 
+const importWallet = async (cluster, keyArr) => { 
+  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+  try {
+    var wallet = web3.Keypair.fromSecretKey(new Uint8Array(keyArr));
+  } catch (error) {
+    return {
+      status: false,
+    };
+  }
+  
+  return {
+    status: true,
+    privateKey: wallet.secretKey,
+    publicKey: wallet.publicKey.toString(),
+  };
+};
+
 const getSolBalance = async (publicKey, cluster) => {
   const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
   return await connection.getBalance(new web3.PublicKey(publicKey)) / web3.LAMPORTS_PER_SOL;
@@ -193,6 +210,7 @@ const transferGSAIL = async (cluster, fromPrivateKey, toPubKey, amount) => {
 
 export default {
   createWallet,
+  importWallet,
   getSolBalance,
   getGSAILBalance,
   getSAILBalance,
