@@ -102,7 +102,7 @@ bot.on('messageCreate', async (message) => {
     message.channel.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
     return;
   } else if (command == "help") { // Display help.
-    message.channel.send(".register-wallet\n.import-wallet <PK>\n.balance\n.tipsol <user> <amount>\n.tipsail <user> <amount>\n.tipgsail <user> <amount>");
+    message.channel.send(`${COMMAND_PREFIX}register-wallet\n${COMMAND_PREFIX}import-wallet <PK>\n${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount>\n${COMMAND_PREFIX}tipsail <user> <amount>\n${COMMAND_PREFIX}tipgsail <user> <amount>`);
     return;
   }
 

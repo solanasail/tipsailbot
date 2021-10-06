@@ -4,7 +4,7 @@ export const CLUSTERS = {
   DEVNET: 'devnet',
 };
 
-export const COMMAND_PREFIX='.';
+export const COMMAND_PREFIX='?';
 
 export const DISCORD_TOKEN='ODkyMTI0Mzk1MDg5Mjk3NDg4.YVIVlg.ZOycFiSPymyjdGEr_-09oEXtzL0'
 

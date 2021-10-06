@@ -26,7 +26,7 @@ const validateForTipping = async (args) => {
   }
 
   let userIds = args.slice(0, args.length - 1);
-  let amount = args.slice(-1);
+  let amount = Number(args.slice(-1));
 
   let recipientIds = [];
   // validate the discord users
@@ -53,7 +53,7 @@ const validateForTipping = async (args) => {
   }
 
   // validate the amount
-  if (isNaN(parseFloat(amount)) || amount <= 0) {
+  if (isNaN(amount) || amount <= 0) {
     return {
       status: false,
       msg: `🚧 Invalid Amount 🚧\n🚧 .tip<type> @user1 @user2 ... <amount> 🚧`,
