@@ -27,9 +27,9 @@ const validateForTipping = async (args) => {
   // validate the discord users
   for (let i = 0; i < userIds.length; i++) {
     // detect the discord user id
-    const elem = (/(\d+)/).exec(userIds[i]);
-
-    if (!elem || elem.index != 3) {
+    const elem = (/<@!(\d+)>/).exec(userIds[i]) || (/<@(\d+)>/).exec(userIds[i]);
+    
+    if (!elem) {
       return {
         status: false,
         msg: `🚧 Invalid User 🚧\n🚧 .tip<type> @user1 @user2 ... <amount> 🚧`,
