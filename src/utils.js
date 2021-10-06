@@ -39,6 +39,14 @@ const validateForTipping = async (args) => {
     recipientIds.push(elem[1]);
   }
 
+  // validate the number of users
+  if (recipientIds.length >= 4) {
+    return {
+      status: false,
+      msg: `🚧 Please input less than 4 users 🚧`,
+    };
+  }
+
   // validate the amount
   if (isNaN(parseFloat(amount)) || amount <= 0) {
     return {

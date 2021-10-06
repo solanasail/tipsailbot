@@ -56,9 +56,9 @@ bot.on('messageCreate', async (message) => {
     const SAIL = await solanaConnect.getSAILBalance(account.privateKey, cluster);
 
     // convert the balance to dolar
-    const dollarValue = await PriceService.getDollarValueForSol(sol);
+    const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
-    message.channel.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
+    message.channel.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
     return;
   } else if (command == "import-wallet") {
     if (message.channel.type != "DM") {
@@ -97,9 +97,9 @@ bot.on('messageCreate', async (message) => {
     const SAIL = await solanaConnect.getSAILBalance(account.privateKey, cluster);
 
     // convert the balance to dolar
-    const dollarValue = await PriceService.getDollarValueForSol(sol);
+    const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
-    message.channel.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
+    message.channel.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
     return;
   } else if (command == "help") { // Display help.
     message.channel.send(".register-wallet\n.import-wallet <PK>\n.balance\n.tipsol <user> <amount>\n.tipsail <user> <amount>\n.tipgsail <user> <amount>");
@@ -126,9 +126,9 @@ bot.on('messageCreate', async (message) => {
     const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id), cluster);
 
     // convert the balance to dolar
-    const dollarValue = await PriceService.getDollarValueForSol(sol);
+    const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
-    message.channel.send(`User: <@!${message.author.id}>\nAddress: ${publicKey}\nBalance: ${sol} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
+    message.channel.send(`User: <@!${message.author.id}>\nAddress: ${publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
     return;
   } else if (command == "tipsol") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
     let validation = await Utils.validateForTipping(args);
@@ -142,7 +142,7 @@ bot.on('messageCreate', async (message) => {
 
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
-    if (sol - amount * recipientIds.length < SOL_FEE_LIMIT * recipientIds.length) {
+    if (sol.amount - amount * recipientIds.length < SOL_FEE_LIMIT * recipientIds.length) {
       message.channel.send(`🚧 Not enough SOL 🚧`);
       return;
     }
@@ -156,7 +156,7 @@ bot.on('messageCreate', async (message) => {
         continue;
       }
 
-      await solanaConnect.transfer(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.isLoggedIn(elem), amount);
+      await solanaConnect.transferSOL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.isLoggedIn(elem), amount);
 
       message.channel.send(`<@!${message.author.id}> sent the ${amount} SOL to <@!${elem}>`);
     }
@@ -174,7 +174,7 @@ bot.on('messageCreate', async (message) => {
 
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
-    if (sol < SOL_FEE_LIMIT) {
+    if (sol.amount < SOL_FEE_LIMIT) {
       message.channel.send(`🚧 Not enough SOL fee to tip the SAIL 🚧`);
       return;
     }
@@ -212,7 +212,7 @@ bot.on('messageCreate', async (message) => {
 
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
-    if (sol < SOL_FEE_LIMIT) {
+    if (sol.amount < SOL_FEE_LIMIT) {
       message.channel.send(`🚧 Not enough SOL fee to tip the GSAIL 🚧`);
       return;
     }
