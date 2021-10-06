@@ -1,4 +1,5 @@
 import Base58 from 'bs58'
+import { COMMAND_PREFIX } from '../config/index.js'
 
 const string2Uint8Array = async (str) => {
   var decodedString;
@@ -17,11 +18,11 @@ const string2Uint8Array = async (str) => {
 }
 
 const validateForTipping = async (args) => {
-  // validate the default parameter. Default .tip<type> @user <amount>
+  // validate the default parameter. Default tip<type> @user <amount>
   if (args.length < 2) {
     return {
       status: false,
-      msg: `🚧 Invalid format 🚧\n🚧 .tip<type> @user1 @user2 ... <amount> 🚧`,
+      msg: `🚧 Invalid format 🚧\n🚧 ${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount> 🚧`,
     };
   }
 
@@ -37,7 +38,7 @@ const validateForTipping = async (args) => {
     if (!elem) {
       return {
         status: false,
-        msg: `🚧 Invalid User 🚧\n🚧 .tip<type> @user1 @user2 ... <amount> 🚧`,
+        msg: `🚧 Invalid User 🚧\n🚧 ${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount> 🚧`,
       };
     }
 
@@ -56,7 +57,7 @@ const validateForTipping = async (args) => {
   if (isNaN(amount) || amount <= 0) {
     return {
       status: false,
-      msg: `🚧 Invalid Amount 🚧\n🚧 .tip<type> @user1 @user2 ... <amount> 🚧`,
+      msg: `🚧 Invalid Amount 🚧\n🚧 ${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount> 🚧`,
     };
   }
     

@@ -16,12 +16,13 @@
 * check your account balance
 
 ### Commands
-* .help
-* .register-wallet
-* .balance
-* .tip <user> <amount>
-* .tipsail <user> <amount>
-* .tipgsail <user> <amount>
+* help
+* import-wallet
+* register-wallet
+* balance
+* tip <user> <amount>
+* tipsail <user> <amount>
+* tipgsail <user> <amount>
 
 In a public channel, you can use the these commands.
 You can also use these commands in a private DM channel with the bot.

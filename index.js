@@ -128,7 +128,12 @@ bot.on('messageCreate', async (message) => {
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
-    message.channel.send(`User: <@!${message.author.id}>\nAddress: ${publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
+    if (message.channel.type == "DM") {
+      message.channel.send(`User: <@!${message.author.id}>\nAddress: ${publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
+      return;
+    }
+
+    message.member.send(`User: <@!${message.author.id}>\nAddress: ${publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
     return;
   } else if (command == "tipsol") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
     let validation = await Utils.validateForTipping(args);
