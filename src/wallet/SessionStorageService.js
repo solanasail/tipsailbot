@@ -4,6 +4,13 @@ const privateKeys = new Keyv();
 const publicKeys = new Keyv();
 const clusters = new Keyv();
 
+const setPublicKey = async (id, publicKey) => {
+  await Promise
+    .all([
+      publicKeys.set(id, publicKey),
+    ]);
+};
+
 const setKeyPair = async (id, privateKey, publicKey) => {
   await Promise
     .all([
@@ -34,6 +41,7 @@ const getPrivateKey = (id) => privateKeys.get(id);
 export default {
   getPrivateKey,
   getPublicKey,
+  setPublicKey,
   setKeyPair,
   getKeyPair,
   getCluster,

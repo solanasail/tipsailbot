@@ -9,28 +9,39 @@ import wallet from './src/wallet/index.js'
 import { CLUSTERS, COMMAND_PREFIX, DISCORD_TOKEN, SOL_FEE_LIMIT } from './config/index.js'
 import Utils from './src/utils.js'
 
+import DB from './src/publicKeyStorage/index.js'
+
 let cluster = CLUSTERS.DEVNET;
 
-// Create a new discord bot instance
-const bot = new Client({ intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"], partials: ["CHANNEL"] });
+// Create a new discord client instance
+const client = new Client({ intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"], partials: ["CHANNEL"] });
+
+try {
+  // connect to database.
+  await DB.connectDB(cluster);
+  console.log("Connected to MongoDB");
+} catch (error) {
+  console.log("Cannot be able to connect to DB");
+  process.exit(1); // exit node.js with an error
+}
 
 // When the client is ready, run this code
-bot.once('ready', () => {
-  console.log(`Logged in as ${bot.user.tag}!`);
+client.once('ready', () => {
+  console.log(`Logged in as ${client.user.tag}!`);
 });
   
-bot.on('disconnected', function() {
+client.on('disconnected', function() {
   console.log('Disconnected!');
   process.exit(1); //exit node.js with an error
 });
 
-bot.on('messageCreate', async (message) => {
-  // Ignore the message if the prefix does not fit and if the bot authored it.
+client.on('messageCreate', async (message) => {
+  // Ignore the message if the prefix does not fit and if the client authored it.
   if (!message.content.startsWith(COMMAND_PREFIX) || message.author.bot) return;
 
   let args = message.content.slice(COMMAND_PREFIX.length).trim().split(/ +/);
   let command = args[0];
-  args = args.slice(1)
+  args = args.slice(1);
 
   if (command == "register-wallet") { // Register wallet.
     if (message.channel.type != "DM") {
@@ -41,10 +52,7 @@ bot.on('messageCreate', async (message) => {
     }
 
     // create new keypair.
-    let account = await solanaConnect.createWallet(cluster);
-
-    // login with keypair.
-    await Wallet.login(message.author.id, account.privateKey, account.publicKey, cluster);
+    let account = await solanaConnect.createWallet(message.author.id, cluster);
     
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(account.publicKey, cluster);
@@ -76,17 +84,14 @@ bot.on('messageCreate', async (message) => {
     }
 
     // create new keypair.
-    let account = await solanaConnect.importWallet(cluster, await Utils.string2Uint8Array(args[0]));
+    let account = await solanaConnect.importWallet(message.author.id, cluster, await Utils.string2Uint8Array(args[0]));
     if (!account.status) {
       message.channel.send(
         '🚧 Invalid private key 🚧',
       );
       return;
     }
-    
-    // login with keypair.
-    await Wallet.login(message.author.id, account.privateKey, account.publicKey, cluster);
-    
+        
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(account.publicKey, cluster);
 
@@ -106,14 +111,14 @@ bot.on('messageCreate', async (message) => {
     return;
   }
 
-  if (!(await Wallet.isLoggedIn(message.author.id))) { // if you doesn't logged in.
+  if (!(await Wallet.getPrivateKey(message.author.id))) { // if you doesn't logged in.
     message.channel.send(
       '🚧 You must register or import your wallet before making transfers 🚧\n🚧 This must be done in a private DM channel 🚧',
     );
     return;
   }
 
-  let publicKey = await Wallet.isLoggedIn(message.author.id);
+  let publicKey = await Wallet.getPublicKey(message.author.id);
 
   if (command == "balance") { // See your current available and pending balance.  
     // get the balance of sol
@@ -156,12 +161,12 @@ bot.on('messageCreate', async (message) => {
       const elem = recipientIds[i];
       
       // if the recipient doesn't have the wallet
-      if (!await Wallet.isLoggedIn(elem)) {
+      if (!await Wallet.getPublicKey(elem)) {
         message.channel.send(`🚧 <@!${elem}> dosn't have the wallet 🚧`);
         continue;
       }
 
-      await solanaConnect.transferSOL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.isLoggedIn(elem), amount);
+      await solanaConnect.transferSOL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
       message.channel.send(`<@!${message.author.id}> sent the ${amount} SOL to <@!${elem}>`);
     }
@@ -194,12 +199,12 @@ bot.on('messageCreate', async (message) => {
       const elem = recipientIds[i];
       
       // if the recipient doesn't have the wallet
-      if (!await Wallet.isLoggedIn(elem)) {
+      if (!await Wallet.getPublicKey(elem)) {
         message.channel.send(`🚧 <@!${elem}> dosn't have the wallet 🚧`);
         continue;
       }
 
-      await solanaConnect.transferSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.isLoggedIn(elem), amount);
+      await solanaConnect.transferSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
       message.channel.send(`<@!${message.author.id}> sent the ${amount} SAIL to <@!${elem}>`);
     }
@@ -233,12 +238,12 @@ bot.on('messageCreate', async (message) => {
       const elem = recipientIds[i];
       
       // if the recipient doesn't have the wallet
-      if (!await Wallet.isLoggedIn(elem)) {
+      if (!await Wallet.getPublicKey(elem)) {
         message.channel.send(`🚧 <@!${elem}> dosn't have the wallet 🚧`);
         continue;
       }
       
-      await solanaConnect.transferGSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.isLoggedIn(elem), amount);
+      await solanaConnect.transferGSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
       message.channel.send(`<@!${message.author.id}> sent the ${amount} gSAIL to <@!${elem}>`);
     }
@@ -248,9 +253,9 @@ bot.on('messageCreate', async (message) => {
 });
 
 try {
-  // Login to Discord with your bot's token
-  bot.login(DISCORD_TOKEN); 
+  // Login to Discord with your client's token
+  client.login(DISCORD_TOKEN); 
 } catch (e) {
-  console.error('Bot has failed to connect to discord.');
+  console.error('Client has failed to connect to discord.');
   process.exit(1);
 }  

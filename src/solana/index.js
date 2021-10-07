@@ -1,10 +1,26 @@
 import web3 from '@solana/web3.js'
 import splToken from '@solana/spl-token'
+import SessionStorageService from '../wallet/SessionStorageService.js';
 import { gSAIL_TOKEN_ADDRESS, SAIL_TOKEN_ADDRESS } from '../../config/index.js'
+import DB from '../publicKeyStorage/index.js'
 
-const createWallet = async (cluster) => { 
+const createWallet = async (id, cluster) => { 
   const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
   var wallet = web3.Keypair.generate();
+  
+  await Promise.all([
+    SessionStorageService.setKeyPair(id, wallet.secretKey, wallet.publicKey.toString()),
+    SessionStorageService.setCluster(id, cluster),
+  ]);
+
+  try {
+    await DB.saveUser({
+      discordId: id,
+      publicKey: wallet.publicKey.toString()
+    });  
+  } catch (error) {
+    console.log("Cannot save the user to database");
+  }
   
   return {
     privateKey: wallet.secretKey,
@@ -12,14 +28,29 @@ const createWallet = async (cluster) => {
   };
 };
 
-const importWallet = async (cluster, keyArr) => { 
+const importWallet = async (id, cluster, keyArr) => { 
   const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+  let wallet;
   try {
-    var wallet = web3.Keypair.fromSecretKey(new Uint8Array(keyArr));
+    wallet = web3.Keypair.fromSecretKey(new Uint8Array(keyArr));
   } catch (error) {
     return {
       status: false,
     };
+  }
+  
+  await Promise.all([
+    SessionStorageService.setKeyPair(id, wallet.secretKey, wallet.publicKey.toString()),
+    SessionStorageService.setCluster(id, cluster),
+  ]);
+
+  try {
+    await DB.saveUser({
+      discordId: id,
+      publicKey: wallet.publicKey.toString()
+    });  
+  } catch (error) {
+    console.log("Cannot save the user to database");
   }
   
   return {
@@ -114,21 +145,25 @@ const transferSOL = async (cluster, fromPrivateKey, toPubKey, sol) => {
 
   const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
 
-  // Add transfer instruction to transaction
-  let transaction = new web3.Transaction().add(
-    web3.SystemProgram.transfer({
-      fromPubkey: fromWallet.publicKey,
-      toPubkey: toPubKey,
-      lamports: sol * web3.LAMPORTS_PER_SOL,
-    }),
-  );
-
-  // Sign transaction, broadcast, and confirm
-  web3.sendAndConfirmTransaction(
-    connection,
-    transaction,
-    [fromWallet],
-  ); 
+  try {
+    // Add transfer instruction to transaction
+    let transaction = new web3.Transaction().add(
+      web3.SystemProgram.transfer({
+        fromPubkey: fromWallet.publicKey,
+        toPubkey: toPubKey,
+        lamports: sol * web3.LAMPORTS_PER_SOL,
+      }),
+    );
+  
+    // Sign transaction, broadcast, and confirm
+    web3.sendAndConfirmTransaction(
+      connection,
+      transaction,
+      [fromWallet],
+    ); 
+  } catch (error) {
+    return false;
+  }
 };
 
 const transferSAIL = async (cluster, fromPrivateKey, toPubKey, amount) => {
@@ -157,23 +192,27 @@ const transferSAIL = async (cluster, fromPrivateKey, toPubKey, amount) => {
     new web3.PublicKey(toPubKey),
   );
 
-  var transaction = new web3.Transaction().add(
-    splToken.Token.createTransferInstruction(
-      splToken.TOKEN_PROGRAM_ID,
-      fromTokenAccount.address,
-      toTokenAccount.address,
-      fromWallet.publicKey,
-      [],
-      amount * 1000000000, // This is transferring 1 token, not 1000000 tokens
-    ),
-  );
-      
-  await web3.sendAndConfirmTransaction(
-    connection,
-    transaction,
-    [fromWallet],
-    {commitment: 'confirmed'},
-  );
+  try {
+    var transaction = new web3.Transaction().add(
+      splToken.Token.createTransferInstruction(
+        splToken.TOKEN_PROGRAM_ID,
+        fromTokenAccount.address,
+        toTokenAccount.address,
+        fromWallet.publicKey,
+        [],
+        amount * 1000000000, // This is transferring 1 token, not 1000000 tokens
+      ),
+    );
+        
+    await web3.sendAndConfirmTransaction(
+      connection,
+      transaction,
+      [fromWallet],
+      {commitment: 'confirmed'},
+    );
+  } catch (error) {
+    return false;
+  }  
 }
 
 const transferGSAIL = async (cluster, fromPrivateKey, toPubKey, amount) => {
@@ -202,23 +241,27 @@ const transferGSAIL = async (cluster, fromPrivateKey, toPubKey, amount) => {
     new web3.PublicKey(toPubKey),
   );
 
-  var transaction = new web3.Transaction().add(
-    splToken.Token.createTransferInstruction(
-      splToken.TOKEN_PROGRAM_ID,
-      fromTokenAccount.address,
-      toTokenAccount.address,
-      fromWallet.publicKey,
-      [],
-      amount * 1000000000, // This is transferring 1 token, not 1000000 tokens
-    ),
-  );
-      
-  await web3.sendAndConfirmTransaction(
-    connection,
-    transaction,
-    [fromWallet],
-    {commitment: 'confirmed'},
-  );
+  try {
+    var transaction = new web3.Transaction().add(
+      splToken.Token.createTransferInstruction(
+        splToken.TOKEN_PROGRAM_ID,
+        fromTokenAccount.address,
+        toTokenAccount.address,
+        fromWallet.publicKey,
+        [],
+        amount * 1000000000, // This is transferring 1 token, not 1000000 tokens
+      ),
+    );
+        
+    await web3.sendAndConfirmTransaction(
+      connection,
+      transaction,
+      [fromWallet],
+      {commitment: 'confirmed'},
+    );
+  } catch (error) {
+    return false;
+  }
 }
 
 export default {
