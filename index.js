@@ -2,7 +2,7 @@ import solanaConnect from './src/solana/index.js'
 import Wallet from './src/wallet/index.js'
 import PriceService from './src/price/PriceService.js'
 
-import { Client } from 'discord.js'
+import { Client, MessageEmbed } from 'discord.js'
 
 import wallet from './src/wallet/index.js'
 
@@ -43,11 +43,11 @@ client.on('messageCreate', async (message) => {
   let command = args[0];
   args = args.slice(1);
 
-  if (command == "register-wallet") { // Register wallet.
+  if (command == "register-wallet") { // Register wallet
     if (message.channel.type != "DM") {
-      message.channel.send(
-        '🚧 This must be done in a private DM channel 🚧',
-      );
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`This must be done in a private DM channel`)]});
       return;
     }
 
@@ -66,29 +66,32 @@ client.on('messageCreate', async (message) => {
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
-    message.channel.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
+    await message.author.send({embeds: [new MessageEmbed()
+      .setTitle(`${cluster}`)
+      .setColor("#0099ff")
+      .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]} );
     return;
-  } else if (command == "import-wallet") {
+  } else if (command == "import-wallet") { // Import wallet
     if (message.channel.type != "DM") {
-      message.channel.send(
-        '🚧 This must be done in a private DM channel 🚧',
-      );
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`This must be done in a private DM channel`)]});
       return;
     }
 
     if (!args[0]) {
-      message.channel.send(
-        '🚧 Please input the private key 🚧',
-      );
+      await message.author.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`Please input the private key`)]});
       return;
     }
 
     // create new keypair.
     let account = await solanaConnect.importWallet(message.author.id, cluster, await Utils.string2Uint8Array(args[0]));
     if (!account.status) {
-      message.channel.send(
-        '🚧 Invalid private key 🚧',
-      );
+      await message.author.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`Invalid private key`)]});
       return;
     }
         
@@ -104,17 +107,25 @@ client.on('messageCreate', async (message) => {
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
-    message.channel.send(`Cluster: ${cluster}\nAddress: ${account.publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL\n[${account.privateKey}]`);
+    await message.author.send({embeds: [new MessageEmbed()
+      .setTitle(`${cluster}`)
+      .setColor("#0099ff")
+      .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]} );
     return;
-  } else if (command == "help") { // Display help.
-    message.channel.send(`${COMMAND_PREFIX}register-wallet\n${COMMAND_PREFIX}import-wallet <PK>\n${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount>\n${COMMAND_PREFIX}tipsail <user> <amount>\n${COMMAND_PREFIX}tipgsail <user> <amount>`);
+  } else if (command == "help") { // Display help
+    await message.author.send({ embeds: [new MessageEmbed()
+      .setColor("#0099ff")
+      .setTitle('Help')
+      .setDescription(`${COMMAND_PREFIX}register-wallet\n${COMMAND_PREFIX}import-wallet <PK>\n${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount>\n${COMMAND_PREFIX}tipsail <user> <amount>\n${COMMAND_PREFIX}tipgsail <user> <amount>`)] });
     return;
   }
 
-  if (!(await Wallet.getPrivateKey(message.author.id))) { // if you doesn't logged in.
-    message.channel.send(
-      '🚧 You must register or import your wallet before making transfers 🚧\n🚧 This must be done in a private DM channel 🚧',
-    );
+  if (!(await Wallet.getPrivateKey(message.author.id))) { // if you doesn't logged in
+    await message.channel.send({embeds: [new MessageEmbed()
+      .setTitle(message.author.tag)
+      .setColor("#d93f71")
+      .setDescription(`You must register or import your wallet before making transfers\nThis must be done in a private DM channel`)]});
+
     return;
   }
 
@@ -132,18 +143,20 @@ client.on('messageCreate', async (message) => {
 
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
+    
+    const embed = new MessageEmbed()
+      .setAuthor(message.author.tag)
+      .setColor("#0099ff")
+      .setDescription(`Address: ${publicKey}\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`);
 
-    if (message.channel.type == "DM") {
-      message.channel.send(`User: <@!${message.author.id}>\nAddress: ${publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
-      return;
-    }
-
-    message.member.send(`User: <@!${message.author.id}>\nAddress: ${publicKey}\nBalance: ${sol.amount} SOL (~${dollarValue}$), ${gSAIL.amount} gSAIL, ${SAIL.amount} SAIL`);
+    await message.author.send({embeds: [embed]});
     return;
   } else if (command == "tipsol") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
     let validation = await Utils.validateForTipping(args);
     if (!validation.status) {
-      message.channel.send(validation.msg);
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(validation.msg)]});
       return;
     }
 
@@ -153,7 +166,9 @@ client.on('messageCreate', async (message) => {
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
     if (sol.amount - amount * recipientIds.length < SOL_FEE_LIMIT * recipientIds.length) {
-      message.channel.send(`🚧 Not enough SOL 🚧`);
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription('Not enough SOL')]});
       return;
     }
 
@@ -162,20 +177,32 @@ client.on('messageCreate', async (message) => {
       
       // if the recipient doesn't have the wallet
       if (!await Wallet.getPublicKey(elem)) {
-        message.channel.send(`🚧 <@!${elem}> dosn't have the wallet 🚧`);
+        await message.channel.send({embeds: [new MessageEmbed()
+          .setColor("#d93f71")
+          .setDescription(`<@!${elem}> dosn't have the wallet`)]});
         continue;
       }
 
       await solanaConnect.transferSOL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
-      message.channel.send(`<@!${message.author.id}> sent the ${amount} SOL to <@!${elem}>`);
+      await message.author.send({embeds: [new MessageEmbed()
+        .setColor("#0099ff")
+        .setDescription(`You sent ${amount} SOL to <@!${elem}>`)]});
+      
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#0099ff")
+        .setDescription(`<@!${message.author.id}> sent ${amount} SOL to <@!${elem}>`)
+      ]});
     }
-
+    
+    await message.react('😄');
     return;
   } else if (command == "tipsail") {
     let validation = await Utils.validateForTipping(args);
     if (!validation.status) {
-      message.channel.send(validation.msg);
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(validation.msg)]});
       return;
     }
 
@@ -185,13 +212,17 @@ client.on('messageCreate', async (message) => {
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
     if (sol.amount < SOL_FEE_LIMIT) {
-      message.channel.send(`🚧 Not enough SOL fee to tip the SAIL 🚧`);
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`Not enough SOL fee to tip the SAIL`)]});
       return;
     }
 
     const SAIL = await solanaConnect.getSAILBalance(await wallet.getPrivateKey(message.author.id), cluster);
     if (amount * recipientIds.length > SAIL.amount) {
-      message.channel.send(`🚧 Not enough SAIL 🚧`)
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`Not enough SAIL`)]});
       return;
     }
 
@@ -200,20 +231,32 @@ client.on('messageCreate', async (message) => {
       
       // if the recipient doesn't have the wallet
       if (!await Wallet.getPublicKey(elem)) {
-        message.channel.send(`🚧 <@!${elem}> dosn't have the wallet 🚧`);
+        await message.channel.send({embeds: [new MessageEmbed()
+          .setColor("#d93f71")
+          .setDescription(`<@!${elem}> dosn't have the wallet`)]});
         continue;
       }
 
       await solanaConnect.transferSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
-      message.channel.send(`<@!${message.author.id}> sent the ${amount} SAIL to <@!${elem}>`);
+      await message.author.send({embeds: [new MessageEmbed()
+        .setColor("#0099ff")
+        .setDescription(`You sent ${amount} SAIL to <@!${elem}>`)]});
+
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#0099ff")
+        .setDescription(`<@!${message.author.id}> sent ${amount} SAIL to <@!${elem}>`)
+      ]});
     }
 
+    await message.react('😄');
     return;
   } else if (command == "tipgsail") {
     let validation = await Utils.validateForTipping(args);
     if (!validation.status) {
-      message.channel.send(validation.msg);
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(validation.msg)]});
       return;
     }
 
@@ -223,14 +266,18 @@ client.on('messageCreate', async (message) => {
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
     if (sol.amount < SOL_FEE_LIMIT) {
-      message.channel.send(`🚧 Not enough SOL fee to tip the GSAIL 🚧`);
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`Not enough SOL fee to tip the GSAIL`)]});
       return;
     }
 
     // get the balance of gSAIL
     const gSAIL = await solanaConnect.getGSAILBalance(await wallet.getPrivateKey(message.author.id), cluster);
     if (amount * recipientIds.length > gSAIL.amount) {
-      message.channel.send(`🚧 Not enough gSAIL 🚧`)
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`Not enough GSAIL`)]});
       return;
     }
 
@@ -239,15 +286,25 @@ client.on('messageCreate', async (message) => {
       
       // if the recipient doesn't have the wallet
       if (!await Wallet.getPublicKey(elem)) {
-        message.channel.send(`🚧 <@!${elem}> dosn't have the wallet 🚧`);
+        await message.channel.send({embeds: [new MessageEmbed()
+          .setColor("#d93f71")
+          .setDescription(`<@!${elem}> dosn't have the wallet`)]});
         continue;
       }
       
       await solanaConnect.transferGSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
-      message.channel.send(`<@!${message.author.id}> sent the ${amount} gSAIL to <@!${elem}>`);
+      await message.author.send({embeds: [new MessageEmbed()
+        .setColor("#0099ff")
+        .setDescription(`You sent ${amount} gSAIL to <@!${elem}>`)]});
+
+        await message.channel.send({embeds: [new MessageEmbed()
+          .setColor("#0099ff")
+          .setDescription(`<@!${message.author.id}> sent ${amount} gSAIL to <@!${elem}>`)
+        ]});
     }
 
+    await message.react('😄');
     return;
   }
 });
