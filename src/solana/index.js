@@ -142,21 +142,20 @@ const getSAILBalance = async (privateKey, cluster) => {
 
 const transferSOL = async (cluster, fromPrivateKey, toPubKey, sol) => {
   var fromWallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(fromPrivateKey)));
-
   const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
-
-  try {
-    // Add transfer instruction to transaction
-    let transaction = new web3.Transaction().add(
-      web3.SystemProgram.transfer({
-        fromPubkey: fromWallet.publicKey,
-        toPubkey: toPubKey,
-        lamports: sol * web3.LAMPORTS_PER_SOL,
-      }),
-    );
   
+  // Add transfer instruction to transaction
+  let transaction = new web3.Transaction().add(
+    web3.SystemProgram.transfer({
+      fromPubkey: fromWallet.publicKey,
+      toPubkey: toPubKey,
+      lamports: sol * web3.LAMPORTS_PER_SOL,
+    }),
+  );
+  
+  try {
     // Sign transaction, broadcast, and confirm
-    web3.sendAndConfirmTransaction(
+    await web3.sendAndConfirmTransaction(
       connection,
       transaction,
       [fromWallet],
