@@ -161,7 +161,7 @@ client.on('messageCreate', async (message) => {
     }
 
     let recipientIds = validation.ids;
-    let amount = validation.amount;
+    let amount = validation.amount.toFixed(6);
 
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
@@ -169,6 +169,13 @@ client.on('messageCreate', async (message) => {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
         .setDescription('Not enough SOL')]});
+      return;
+    }
+
+    if (amount < 0.000001 || 5 < amount) {
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription('MIN: 0.000001\nMAX: 5')]});
       return;
     }
 
@@ -207,7 +214,7 @@ client.on('messageCreate', async (message) => {
     }
 
     let recipientIds = validation.ids;
-    let amount = validation.amount;
+    let amount = validation.amount.toFixed(6);
 
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
@@ -223,6 +230,13 @@ client.on('messageCreate', async (message) => {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
         .setDescription(`Not enough SAIL`)]});
+      return;
+    }
+
+    if (amount < 0.000001 || 1000 < amount) {
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription('MIN: 0.000001\nMAX: 1000')]});
       return;
     }
 
@@ -261,7 +275,7 @@ client.on('messageCreate', async (message) => {
     }
 
     let recipientIds = validation.ids;
-    let amount = validation.amount;
+    let amount = validation.amount.toFixed(9);
 
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(publicKey, cluster);
@@ -278,6 +292,13 @@ client.on('messageCreate', async (message) => {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
         .setDescription(`Not enough GSAIL`)]});
+      return;
+    }
+
+    if (amount < 0.000000001 || 100 < amount) {
+      await message.channel.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription('MIN: 0.000000001\nMAX: 100')]});
       return;
     }
 
