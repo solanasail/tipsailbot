@@ -66,10 +66,12 @@ client.on('messageCreate', async (message) => {
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
-    await message.author.send({embeds: [new MessageEmbed()
+    message.author.send({embeds: [new MessageEmbed()
       .setTitle(`${cluster}`)
       .setColor("#0099ff")
-      .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]} );
+      .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]}).catch(error => {
+        console.log(`Cannot send messages to this user`);
+      });
     return;
   } else if (command == "import-wallet") { // Import wallet
     if (message.channel.type != "DM") {
@@ -80,18 +82,22 @@ client.on('messageCreate', async (message) => {
     }
 
     if (!args[0]) {
-      await message.author.send({embeds: [new MessageEmbed()
+      message.author.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
-        .setDescription(`Please input the private key`)]});
+        .setDescription(`Please input the private key`)]}).catch(error => {
+          console.log(`Cannot send messages to this user`);
+        });
       return;
     }
 
     // create new keypair.
     let account = await solanaConnect.importWallet(message.author.id, cluster, await Utils.string2Uint8Array(args[0]));
     if (!account.status) {
-      await message.author.send({embeds: [new MessageEmbed()
+      message.author.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
-        .setDescription(`Invalid private key`)]});
+        .setDescription(`Invalid private key`)]}).catch(error => {
+          console.log(`Cannot send messages to this user`);
+        });
       return;
     }
         
@@ -107,16 +113,20 @@ client.on('messageCreate', async (message) => {
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
-    await message.author.send({embeds: [new MessageEmbed()
+    message.author.send({embeds: [new MessageEmbed()
       .setTitle(`${cluster}`)
       .setColor("#0099ff")
-      .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]} );
+      .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]} ).catch(error => {
+        console.log(`Cannot send messages to this user`);
+      });
     return;
   } else if (command == "help") { // Display help
-    await message.author.send({ embeds: [new MessageEmbed()
+    message.author.send({ embeds: [new MessageEmbed()
       .setColor("#0099ff")
       .setTitle('Help')
-      .setDescription(`${COMMAND_PREFIX}register-wallet\n${COMMAND_PREFIX}import-wallet <PK>\n${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount>\n${COMMAND_PREFIX}tipsail <user> <amount>\n${COMMAND_PREFIX}tipgsail <user> <amount>`)] });
+      .setDescription(`${COMMAND_PREFIX}register-wallet\n${COMMAND_PREFIX}import-wallet <PK>\n${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount>\n${COMMAND_PREFIX}tipsail <user> <amount>\n${COMMAND_PREFIX}tipgsail <user> <amount>`)] }).catch(error => {
+        console.log(`Cannot send messages to this user`);
+      });
     return;
   }
 
@@ -144,12 +154,12 @@ client.on('messageCreate', async (message) => {
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
     
-    const embed = new MessageEmbed()
+    message.author.send({embeds: [new MessageEmbed()
       .setAuthor(message.author.tag)
       .setColor("#0099ff")
-      .setDescription(`Address: ${publicKey}\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`);
-
-    await message.author.send({embeds: [embed]});
+      .setDescription(`Address: ${publicKey}\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]}).catch(error => {
+      console.log(`Cannot send messages to this user`);
+    });
     return;
   } else if (command == "tipsol") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
     let validation = await Utils.validateForTipping(args);
@@ -192,14 +202,22 @@ client.on('messageCreate', async (message) => {
 
       await solanaConnect.transferSOL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
-      await message.author.send({embeds: [new MessageEmbed()
+      // DM to sender
+      message.author.send({embeds: [new MessageEmbed()
         .setColor("#0099ff")
-        .setDescription(`You sent ${amount} SOL to <@!${elem}>`)]});
-      
-      await message.channel.send({embeds: [new MessageEmbed()
-        .setColor("#0099ff")
-        .setDescription(`<@!${message.author.id}> sent ${amount} SOL to <@!${elem}>`)
-      ]});
+        .setDescription(`You sent ${amount} SOL to <@!${elem}>`)]}).catch(error => {
+          console.log(`Cannot send messages to this user`);
+      });  
+
+      try {
+        // DM to recipient
+        let fetchedUser = await client.users.fetch(elem, false);
+        await fetchedUser.send({embeds: [new MessageEmbed()
+          .setColor("#0099ff")
+          .setDescription(`You received ${amount} SOL from <@!${message.author.id}>`)]});
+      } catch (error) {
+        console.log(`Cannot send messages to this user`);
+      }
     }
     
     await message.react('😄');
@@ -253,14 +271,22 @@ client.on('messageCreate', async (message) => {
 
       await solanaConnect.transferSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
-      await message.author.send({embeds: [new MessageEmbed()
+      // DM to sender
+      message.author.send({embeds: [new MessageEmbed()
         .setColor("#0099ff")
-        .setDescription(`You sent ${amount} SAIL to <@!${elem}>`)]});
+        .setDescription(`You sent ${amount} SAIL to <@!${elem}>`)]}).catch(error => {
+          console.log(`Cannot send messages to this user`);
+      });
 
-      await message.channel.send({embeds: [new MessageEmbed()
-        .setColor("#0099ff")
-        .setDescription(`<@!${message.author.id}> sent ${amount} SAIL to <@!${elem}>`)
-      ]});
+      try {
+        // DM to recipient
+        let fetchedUser = await client.users.fetch(elem, false);
+        await fetchedUser.send({embeds: [new MessageEmbed()
+          .setColor("#0099ff")
+          .setDescription(`You received ${amount} SAIL from <@!${message.author.id}>`)]});
+      } catch (error) {
+        console.log(`Cannot send messages to this user`);
+      }
     }
 
     await message.react('😄');
@@ -315,14 +341,22 @@ client.on('messageCreate', async (message) => {
       
       await solanaConnect.transferGSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
-      await message.author.send({embeds: [new MessageEmbed()
+      // DM to sender
+      message.author.send({embeds: [new MessageEmbed()
         .setColor("#0099ff")
-        .setDescription(`You sent ${amount} gSAIL to <@!${elem}>`)]});
+        .setDescription(`You sent ${amount} gSAIL to <@!${elem}>`)]}).catch(error => {
+          console.log(`Cannot send messages to this user`);
+        });
 
-        await message.channel.send({embeds: [new MessageEmbed()
+      try {
+        // DM to recipient
+        let fetchedUser = await client.users.fetch(elem, false);
+        await fetchedUser.send({embeds: [new MessageEmbed()
           .setColor("#0099ff")
-          .setDescription(`<@!${message.author.id}> sent ${amount} gSAIL to <@!${elem}>`)
-        ]});
+          .setDescription(`You received ${amount} gSAIL from <@!${message.author.id}>`)]});
+      } catch (error) {
+        console.log(`Cannot send messages to this user`);
+      }
     }
 
     await message.react('😄');
