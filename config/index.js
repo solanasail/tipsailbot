@@ -16,6 +16,7 @@ export const SOL_FEE_LIMIT=0.001
 export const DEFAULT_GSAIL_AMOUNT=1
 export const DEFAULT_SAIL_AMOUNT=1
 
+export const SOL_Emoji='sol'
 export const SAIL_Emoji='sail'
 export const gSAIL_Emoji='gsail'
 

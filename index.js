@@ -6,7 +6,15 @@ import { Client, MessageEmbed } from 'discord.js'
 
 import wallet from './src/wallet/index.js'
 
-import { CLUSTERS, COMMAND_PREFIX, DISCORD_TOKEN, SOL_FEE_LIMIT, SAIL_Emoji, gSAIL_Emoji } from './config/index.js'
+import { 
+  CLUSTERS, 
+  COMMAND_PREFIX, 
+  DISCORD_TOKEN, 
+  SOL_FEE_LIMIT, 
+  SAIL_Emoji, 
+  gSAIL_Emoji, 
+  SOL_Emoji 
+} from './config/index.js'
 import Utils from './src/utils.js'
 
 import DB from './src/publicKeyStorage/index.js'
@@ -219,6 +227,8 @@ client.on('messageCreate', async (message) => {
         console.log(`Cannot send messages to this user`);
       }
     }
+    const sol_emoji = await message.guild.emojis.cache.find(emoji => emoji.name == SOL_Emoji);
+    await message.react(sol_emoji);
     return;
   } else if (command == "tipsail") {
     let validation = await Utils.validateForTipping(args);
