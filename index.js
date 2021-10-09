@@ -6,7 +6,7 @@ import { Client, MessageEmbed } from 'discord.js'
 
 import wallet from './src/wallet/index.js'
 
-import { CLUSTERS, COMMAND_PREFIX, DISCORD_TOKEN, SOL_FEE_LIMIT } from './config/index.js'
+import { CLUSTERS, COMMAND_PREFIX, DISCORD_TOKEN, SOL_FEE_LIMIT, SAIL_Emoji, gSAIL_Emoji } from './config/index.js'
 import Utils from './src/utils.js'
 
 import DB from './src/publicKeyStorage/index.js'
@@ -219,8 +219,6 @@ client.on('messageCreate', async (message) => {
         console.log(`Cannot send messages to this user`);
       }
     }
-    
-    await message.react('😄');
     return;
   } else if (command == "tipsail") {
     let validation = await Utils.validateForTipping(args);
@@ -288,8 +286,9 @@ client.on('messageCreate', async (message) => {
         console.log(`Cannot send messages to this user`);
       }
     }
-
-    await message.react('😄');
+    
+    const sail_emoji = await message.guild.emojis.cache.find(emoji => emoji.name == SAIL_Emoji);
+    await message.react(sail_emoji);
     return;
   } else if (command == "tipgsail") {
     let validation = await Utils.validateForTipping(args);
@@ -359,7 +358,8 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    await message.react('😄');
+    const gsail_emoji = await message.guild.emojis.cache.find(emoji => emoji.name == gSAIL_Emoji);
+    await message.react(gsail_emoji);
     return;
   }
 });

@@ -13,6 +13,12 @@ export const SAIL_TOKEN_ADDRESS='4WkdBnsUt3zyWkhVbXgY9aQeR64ri42ioYTuaZp8WATn'
 
 export const SOL_FEE_LIMIT=0.001
 
+export const DEFAULT_GSAIL_AMOUNT=1
+export const DEFAULT_SAIL_AMOUNT=1
+
+export const SAIL_Emoji='sail'
+export const gSAIL_Emoji='gsail'
+
 export const DB_HOST='localhost'
 export const DB_USERNAME='root'
 export const DB_PASSWORD=''
