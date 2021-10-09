@@ -13,7 +13,8 @@ import {
   SOL_FEE_LIMIT, 
   SAIL_Emoji, 
   gSAIL_Emoji, 
-  SOL_Emoji 
+  SOL_Emoji,
+  TRANSACTION_DESC
 } from './config/index.js'
 import Utils from './src/utils.js'
 
@@ -47,9 +48,16 @@ client.on('messageCreate', async (message) => {
   // Ignore the message if the prefix does not fit and if the client authored it.
   if (!message.content.startsWith(COMMAND_PREFIX) || message.author.bot) return;
 
-  let args = message.content.slice(COMMAND_PREFIX.length).trim().split(/ +/);
+  let tmpMsg = (message.content + ' ').split(' -m ');
+
+  let args = tmpMsg[0].slice(COMMAND_PREFIX.length).trim().split(/ +/);
   let command = args[0];
+  let desc = TRANSACTION_DESC;
   args = args.slice(1);
+
+  if (tmpMsg[1]) {
+    desc = tmpMsg[1];
+  }
 
   if (command == "register-wallet") { // Register wallet
     if (message.channel.type != "DM") {
@@ -132,7 +140,7 @@ client.on('messageCreate', async (message) => {
     message.author.send({ embeds: [new MessageEmbed()
       .setColor("#0099ff")
       .setTitle('Help')
-      .setDescription(`${COMMAND_PREFIX}register-wallet\n${COMMAND_PREFIX}import-wallet <PK>\n${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount>\n${COMMAND_PREFIX}tipsail <user> <amount>\n${COMMAND_PREFIX}tipgsail <user> <amount>`)] }).catch(error => {
+      .setDescription(`${COMMAND_PREFIX}register-wallet\n${COMMAND_PREFIX}import-wallet <PK>\n${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount> -m <description>\n${COMMAND_PREFIX}tipsail <user> <amount> -m <description>\n${COMMAND_PREFIX}tipgsail <user> <amount> -m <description>`)] }).catch(error => {
         console.log(`Cannot send messages to this user`);
       });
     return;
@@ -213,16 +221,18 @@ client.on('messageCreate', async (message) => {
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()
         .setColor("#0099ff")
-        .setDescription(`You sent ${amount} SOL to <@!${elem}>`)]}).catch(error => {
+        .setTitle('Tip SOL')
+        .setDescription(`You sent ${amount} SOL to <@!${elem}>\n\nDescription:\n${desc}`)]}).catch(error => {
           console.log(`Cannot send messages to this user`);
-      });  
+      });
 
       try {
         // DM to recipient
         let fetchedUser = await client.users.fetch(elem, false);
         await fetchedUser.send({embeds: [new MessageEmbed()
           .setColor("#0099ff")
-          .setDescription(`You received ${amount} SOL from <@!${message.author.id}>`)]});
+          .setTitle('Tip SOL')
+          .setDescription(`You received ${amount} SOL from <@!${message.author.id}>\n\nDescription:\n${desc}`)]});
       } catch (error) {
         console.log(`Cannot send messages to this user`);
       }
@@ -282,7 +292,8 @@ client.on('messageCreate', async (message) => {
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()
         .setColor("#0099ff")
-        .setDescription(`You sent ${amount} SAIL to <@!${elem}>`)]}).catch(error => {
+        .setTitle('Tip SAIL')
+        .setDescription(`You sent ${amount} SAIL to <@!${elem}>\n\nDescription:\n${desc}`)]}).catch(error => {
           console.log(`Cannot send messages to this user`);
       });
 
@@ -291,7 +302,8 @@ client.on('messageCreate', async (message) => {
         let fetchedUser = await client.users.fetch(elem, false);
         await fetchedUser.send({embeds: [new MessageEmbed()
           .setColor("#0099ff")
-          .setDescription(`You received ${amount} SAIL from <@!${message.author.id}>`)]});
+          .setTitle('Tip SAIL')
+          .setDescription(`You received ${amount} SAIL from <@!${message.author.id}>\n\nDescription:\n${desc}`)]});
       } catch (error) {
         console.log(`Cannot send messages to this user`);
       }
@@ -353,16 +365,18 @@ client.on('messageCreate', async (message) => {
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()
         .setColor("#0099ff")
-        .setDescription(`You sent ${amount} gSAIL to <@!${elem}>`)]}).catch(error => {
+        .setTitle('Tip gSAIL')
+        .setDescription(`You sent ${amount} gSAIL to <@!${elem}>\n\nDescription:\n${desc}`)]}).catch(error => {
           console.log(`Cannot send messages to this user`);
-        });
+      });
 
       try {
         // DM to recipient
         let fetchedUser = await client.users.fetch(elem, false);
         await fetchedUser.send({embeds: [new MessageEmbed()
           .setColor("#0099ff")
-          .setDescription(`You received ${amount} gSAIL from <@!${message.author.id}>`)]});
+          .setTitle('Tip gSAIL')
+          .setDescription(`You received ${amount} gSAIL from <@!${message.author.id}>\n\nDescription:\n${desc}`)]});
       } catch (error) {
         console.log(`Cannot send messages to this user`);
       }

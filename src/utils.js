@@ -22,7 +22,7 @@ const validateForTipping = async (args) => {
   if (args.length < 2) {
     return {
       status: false,
-      msg: `Invalid format\n${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount>`,
+      msg: `Invalid format\n${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount> -m <description>`,
     };
   }
 
@@ -38,7 +38,7 @@ const validateForTipping = async (args) => {
     if (!elem) {
       return {
         status: false,
-        msg: `Invalid User\n${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount>`,
+        msg: `Invalid format\n${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount> -m <description>`,
       };
     }
 
@@ -57,7 +57,7 @@ const validateForTipping = async (args) => {
   if (isNaN(amount) || amount <= 0) {
     return {
       status: false,
-      msg: `Invalid Amount\n${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount>`,
+      msg: `Invalid Amount\n${COMMAND_PREFIX}tip<type> @user1 @user2 ... <amount> -m <description>`,
     };
   }
     

@@ -20,6 +20,8 @@ export const SOL_Emoji='sol'
 export const SAIL_Emoji='sail'
 export const gSAIL_Emoji='gsail'
 
+export const TRANSACTION_DESC='.........description.........'
+
 export const DB_HOST='localhost'
 export const DB_USERNAME='root'
 export const DB_PASSWORD=''
