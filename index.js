@@ -148,7 +148,6 @@ client.on('messageCreate', async (message) => {
 
   if (!(await Wallet.getPrivateKey(message.author.id))) { // if you doesn't logged in
     await message.channel.send({embeds: [new MessageEmbed()
-      .setTitle(message.author.tag)
       .setColor("#d93f71")
       .setDescription(`You must register or import your wallet before making transfers\nThis must be done in a private DM channel`)]});
 
