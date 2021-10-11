@@ -236,8 +236,13 @@ client.on('messageCreate', async (message) => {
         console.log(`Cannot send messages to this user`);
       }
     }
-    const sol_emoji = await message.guild.emojis.cache.find(emoji => emoji.name == SOL_Emoji);
-    await message.react(sol_emoji);
+    try {
+      let tmpCache = await message.guild.emojis.cache;
+      const sol_emoji = tmpCache.find(emoji => emoji.name == SOL_Emoji);
+      await message.react(sol_emoji);
+    } catch (error) {
+      console.log('sol emoji error');
+    }
     return;
   } else if (command == "tipsail") {
     let validation = await Utils.validateForTipping(args);
@@ -308,8 +313,13 @@ client.on('messageCreate', async (message) => {
       }
     }
     
-    const sail_emoji = await message.guild.emojis.cache.find(emoji => emoji.name == SAIL_Emoji);
-    await message.react(sail_emoji);
+    try {
+      let tmpCache = await message.guild.emojis.cache;
+      const sail_emoji = tmpCache.find(emoji => emoji.name == SAIL_Emoji);
+      await message.react(sail_emoji);
+    } catch (error) {
+      console.log('sail emoji error');
+    }
     return;
   } else if (command == "tipgsail") {
     let validation = await Utils.validateForTipping(args);
@@ -381,8 +391,13 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    const gsail_emoji = await message.guild.emojis.cache.find(emoji => emoji.name == gSAIL_Emoji);
-    await message.react(gsail_emoji);
+    try {
+      let tmpCache = await message.guild.emojis.cache;
+      const gsail_emoji = tmpCache.find(emoji => emoji.name == gSAIL_Emoji);
+      await message.react(gsail_emoji);
+    } catch (error) {
+      console.log('gsail emoji error');
+    }
     return;
   }
 });
