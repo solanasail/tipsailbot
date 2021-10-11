@@ -1,16 +1,20 @@
 import web3 from '@solana/web3.js'
 import splToken from '@solana/spl-token'
 import SessionStorageService from '../wallet/SessionStorageService.js';
-import { gSAIL_TOKEN_ADDRESS, SAIL_TOKEN_ADDRESS } from '../../config/index.js'
+import { 
+  CLUSTERS,
+  gSAIL_TOKEN_ADDRESS, 
+  SAIL_TOKEN_ADDRESS 
+} from '../../config/index.js'
 import DB from '../publicKeyStorage/index.js'
 
-const createWallet = async (id, cluster) => { 
-  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+const createWallet = async (id) => { 
+  const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
   var wallet = web3.Keypair.generate();
   
   await Promise.all([
     SessionStorageService.setKeyPair(id, wallet.secretKey, wallet.publicKey.toString()),
-    SessionStorageService.setCluster(id, cluster),
+    SessionStorageService.setCluster(id, CLUSTERS.DEVNET),
   ]);
 
   try {
@@ -28,8 +32,8 @@ const createWallet = async (id, cluster) => {
   };
 };
 
-const importWallet = async (id, cluster, keyArr) => { 
-  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+const importWallet = async (id, keyArr) => { 
+  const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
   let wallet;
   try {
     wallet = web3.Keypair.fromSecretKey(new Uint8Array(keyArr));
@@ -41,7 +45,7 @@ const importWallet = async (id, cluster, keyArr) => {
   
   await Promise.all([
     SessionStorageService.setKeyPair(id, wallet.secretKey, wallet.publicKey.toString()),
-    SessionStorageService.setCluster(id, cluster),
+    SessionStorageService.setCluster(id, CLUSTERS.DEVNET),
   ]);
 
   try {
@@ -60,8 +64,8 @@ const importWallet = async (id, cluster, keyArr) => {
   };
 };
 
-const getSolBalance = async (publicKey, cluster) => {
-  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+const getSolBalance = async (publicKey) => {
+  const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
 
   try {
     let amount = await connection.getBalance(new web3.PublicKey(publicKey)) / web3.LAMPORTS_PER_SOL;
@@ -78,8 +82,8 @@ const getSolBalance = async (publicKey, cluster) => {
   }
 };
 
-const getGSAILBalance = async (privateKey, cluster) => {
-  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+const getGSAILBalance = async (privateKey) => {
+  const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
   var wallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(privateKey)));
 
   let token = await new splToken.Token(
@@ -109,8 +113,8 @@ const getGSAILBalance = async (privateKey, cluster) => {
   };
 }
 
-const getSAILBalance = async (privateKey, cluster) => {
-  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+const getSAILBalance = async (privateKey) => {
+  const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
   var wallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(privateKey)));
 
   let token = await new splToken.Token(
@@ -140,9 +144,9 @@ const getSAILBalance = async (privateKey, cluster) => {
   };
 }
 
-const transferSOL = async (cluster, fromPrivateKey, toPubKey, sol) => {
+const transferSOL = async (fromPrivateKey, toPubKey, sol) => {
   var fromWallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(fromPrivateKey)));
-  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+  const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
   
   // Add transfer instruction to transaction
   let transaction = new web3.Transaction().add(
@@ -165,8 +169,8 @@ const transferSOL = async (cluster, fromPrivateKey, toPubKey, sol) => {
   }
 };
 
-const transferSAIL = async (cluster, fromPrivateKey, toPubKey, amount) => {
-  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+const transferSAIL = async (fromPrivateKey, toPubKey, amount) => {
+  const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
 
   var fromWallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(fromPrivateKey)));
 
@@ -214,8 +218,8 @@ const transferSAIL = async (cluster, fromPrivateKey, toPubKey, amount) => {
   }  
 }
 
-const transferGSAIL = async (cluster, fromPrivateKey, toPubKey, amount) => {
-  const connection = new web3.Connection(web3.clusterApiUrl(cluster), 'confirmed');
+const transferGSAIL = async (fromPrivateKey, toPubKey, amount) => {
+  const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
 
   var fromWallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(fromPrivateKey)));
 

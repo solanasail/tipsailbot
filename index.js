@@ -20,14 +20,12 @@ import Utils from './src/utils.js'
 
 import DB from './src/publicKeyStorage/index.js'
 
-let cluster = CLUSTERS.DEVNET;
-
 // Create a new discord client instance
 const client = new Client({ intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"], partials: ["CHANNEL"] });
 
 try {
   // connect to database.
-  await DB.connectDB(cluster);
+  await DB.connectDB(CLUSTERS.DEVNET);
   console.log("Connected to MongoDB");
 } catch (error) {
   console.log("Cannot be able to connect to DB");
@@ -68,22 +66,22 @@ client.on('messageCreate', async (message) => {
     }
 
     // create new keypair.
-    let account = await solanaConnect.createWallet(message.author.id, cluster);
+    let account = await solanaConnect.createWallet(message.author.id);
     
     // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(account.publicKey, cluster);
+    const sol = await solanaConnect.getSolBalance(account.publicKey);
 
     // get the balance of gSAIL
-    const gSAIL = await solanaConnect.getGSAILBalance(account.privateKey, cluster);
+    const gSAIL = await solanaConnect.getGSAILBalance(account.privateKey);
 
     // get the balance of SAIL
-    const SAIL = await solanaConnect.getSAILBalance(account.privateKey, cluster);
+    const SAIL = await solanaConnect.getSAILBalance(account.privateKey);
 
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
     message.author.send({embeds: [new MessageEmbed()
-      .setTitle(`${cluster}`)
+      .setTitle(`${CLUSTERS.DEVNET}`)
       .setColor("#0099ff")
       .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]}).catch(error => {
         console.log(`Cannot send messages to this user`);
@@ -107,7 +105,7 @@ client.on('messageCreate', async (message) => {
     }
 
     // create new keypair.
-    let account = await solanaConnect.importWallet(message.author.id, cluster, await Utils.string2Uint8Array(args[0]));
+    let account = await solanaConnect.importWallet(message.author.id, await Utils.string2Uint8Array(args[0]));
     if (!account.status) {
       message.author.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
@@ -118,19 +116,19 @@ client.on('messageCreate', async (message) => {
     }
         
     // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(account.publicKey, cluster);
+    const sol = await solanaConnect.getSolBalance(account.publicKey);
 
     // get the balance of gSAIL
-    const gSAIL = await solanaConnect.getGSAILBalance(account.privateKey, cluster);
+    const gSAIL = await solanaConnect.getGSAILBalance(account.privateKey);
 
     // get the balance of SAIL
-    const SAIL = await solanaConnect.getSAILBalance(account.privateKey, cluster);
+    const SAIL = await solanaConnect.getSAILBalance(account.privateKey);
 
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
 
     message.author.send({embeds: [new MessageEmbed()
-      .setTitle(`${cluster}`)
+      .setTitle(`${CLUSTERS.DEVNET}`)
       .setColor("#0099ff")
       .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]} ).catch(error => {
         console.log(`Cannot send messages to this user`);
@@ -158,13 +156,13 @@ client.on('messageCreate', async (message) => {
 
   if (command == "balance") { // See your current available and pending balance.  
     // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(publicKey, cluster);
+    const sol = await solanaConnect.getSolBalance(publicKey);
 
     // get the balance of gSAIL
-    const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id), cluster);
+    const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
 
     // get the balance of SAIL
-    const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id), cluster);
+    const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
 
     // convert the balance to dolar
     const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
@@ -189,7 +187,7 @@ client.on('messageCreate', async (message) => {
     let amount = validation.amount.toFixed(6);
 
     // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(publicKey, cluster);
+    const sol = await solanaConnect.getSolBalance(publicKey);
     if (sol.amount - amount * recipientIds.length < SOL_FEE_LIMIT * recipientIds.length) {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
@@ -215,7 +213,19 @@ client.on('messageCreate', async (message) => {
         continue;
       }
 
-      await solanaConnect.transferSOL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
+      // get the balance of gSAIL
+      const gSAIL = await solanaConnect.getGSAILBalance(await wallet.getPrivateKey(message.author.id));
+      // get the balance of SAIL
+      const SAIL = await solanaConnect.getSAILBalance(await wallet.getPrivateKey(message.author.id));
+
+      if (gSAIL.amount < 1 || SAIL.amount < 1) {
+        await message.channel.send({embeds: [new MessageEmbed()
+          .setColor("#d93f71")
+          .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]});
+          return;
+      }
+
+      await solanaConnect.transferSOL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()
@@ -236,6 +246,7 @@ client.on('messageCreate', async (message) => {
         console.log(`Cannot send messages to this user`);
       }
     }
+
     try {
       let tmpCache = await message.guild.emojis.cache;
       const sol_emoji = tmpCache.find(emoji => emoji.name == SOL_Emoji);
@@ -257,7 +268,7 @@ client.on('messageCreate', async (message) => {
     let amount = validation.amount.toFixed(6);
 
     // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(publicKey, cluster);
+    const sol = await solanaConnect.getSolBalance(publicKey);
     if (sol.amount < SOL_FEE_LIMIT) {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
@@ -265,7 +276,7 @@ client.on('messageCreate', async (message) => {
       return;
     }
 
-    const SAIL = await solanaConnect.getSAILBalance(await wallet.getPrivateKey(message.author.id), cluster);
+    const SAIL = await solanaConnect.getSAILBalance(await wallet.getPrivateKey(message.author.id));
     if (amount * recipientIds.length > SAIL.amount) {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
@@ -291,7 +302,19 @@ client.on('messageCreate', async (message) => {
         continue;
       }
 
-      await solanaConnect.transferSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
+      // get the balance of gSAIL
+      const gSAIL = await solanaConnect.getGSAILBalance(await wallet.getPrivateKey(message.author.id));
+      // get the balance of SAIL
+      const SAIL = await solanaConnect.getSAILBalance(await wallet.getPrivateKey(message.author.id));
+
+      if (gSAIL.amount < 1 || SAIL.amount < 1) {
+        await message.channel.send({embeds: [new MessageEmbed()
+          .setColor("#d93f71")
+          .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]});
+          return;
+      }
+
+      await solanaConnect.transferSAIL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()
@@ -334,7 +357,7 @@ client.on('messageCreate', async (message) => {
     let amount = validation.amount.toFixed(9);
 
     // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(publicKey, cluster);
+    const sol = await solanaConnect.getSolBalance(publicKey);
     if (sol.amount < SOL_FEE_LIMIT) {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
@@ -343,7 +366,7 @@ client.on('messageCreate', async (message) => {
     }
 
     // get the balance of gSAIL
-    const gSAIL = await solanaConnect.getGSAILBalance(await wallet.getPrivateKey(message.author.id), cluster);
+    const gSAIL = await solanaConnect.getGSAILBalance(await wallet.getPrivateKey(message.author.id));
     if (amount * recipientIds.length > gSAIL.amount) {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
@@ -369,7 +392,19 @@ client.on('messageCreate', async (message) => {
         continue;
       }
       
-      await solanaConnect.transferGSAIL(cluster, await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
+      // get the balance of gSAIL
+      const gSAIL = await solanaConnect.getGSAILBalance(await wallet.getPrivateKey(message.author.id));
+      // get the balance of SAIL
+      const SAIL = await solanaConnect.getSAILBalance(await wallet.getPrivateKey(message.author.id));
+
+      if (gSAIL.amount < 1 || SAIL.amount < 1) {
+        await message.channel.send({embeds: [new MessageEmbed()
+          .setColor("#d93f71")
+          .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]});
+          return;
+      }
+      
+      await solanaConnect.transferGSAIL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
 
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()
