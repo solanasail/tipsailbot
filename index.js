@@ -177,7 +177,7 @@ client.on('messageCreate', async (message) => {
     });
     return;
   } else if (command == "tipsol") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
-    let validation = await Utils.validateForTipping(args);
+    let validation = await Utils.validateForTipping(args, desc);
     if (!validation.status) {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
@@ -245,7 +245,7 @@ client.on('messageCreate', async (message) => {
     }
     return;
   } else if (command == "tipsail") {
-    let validation = await Utils.validateForTipping(args);
+    let validation = await Utils.validateForTipping(args, desc);
     if (!validation.status) {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
@@ -322,7 +322,7 @@ client.on('messageCreate', async (message) => {
     }
     return;
   } else if (command == "tipgsail") {
-    let validation = await Utils.validateForTipping(args);
+    let validation = await Utils.validateForTipping(args, desc);
     if (!validation.status) {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")

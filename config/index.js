@@ -21,6 +21,7 @@ export const SAIL_Emoji='sail'
 export const gSAIL_Emoji='gsail'
 
 export const TRANSACTION_DESC='.........description.........'
+export const TIP_DESC_LIMIT=50
 
 export const DB_HOST='localhost'
 export const DB_USERNAME='root'

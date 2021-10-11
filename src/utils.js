@@ -1,5 +1,5 @@
 import Base58 from 'bs58'
-import { COMMAND_PREFIX } from '../config/index.js'
+import { COMMAND_PREFIX, TIP_DESC_LIMIT } from '../config/index.js'
 
 const string2Uint8Array = async (str) => {
   var decodedString;
@@ -17,7 +17,7 @@ const string2Uint8Array = async (str) => {
   return arr;
 }
 
-const validateForTipping = async (args) => {
+const validateForTipping = async (args, desc) => {
   // validate the default parameter. Default tip<type> @user <amount>
   if (args.length < 2) {
     return {
@@ -50,6 +50,14 @@ const validateForTipping = async (args) => {
     return {
       status: false,
       msg: `Please input less than 4 users`,
+    };
+  }
+
+  // validate the desc length
+  if (desc.length > TIP_DESC_LIMIT) {
+    return {
+      status: false,
+      msg: `Description limit ${TIP_DESC_LIMIT}`,
     };
   }
 
