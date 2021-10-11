@@ -6,7 +6,7 @@ import { Client, MessageEmbed } from 'discord.js'
 
 import wallet from './src/wallet/index.js'
 
-import { 
+import {  
   CLUSTERS, 
   COMMAND_PREFIX, 
   DISCORD_TOKEN, 
@@ -229,7 +229,7 @@ client.on('messageCreate', async (message) => {
           return;
       }
 
-      await solanaConnect.transferSOL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
+      await solanaConnect.transferSOL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount, desc);
 
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()
@@ -318,7 +318,7 @@ client.on('messageCreate', async (message) => {
           return;
       }
 
-      await solanaConnect.transferSAIL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
+      await solanaConnect.transferSAIL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount, desc);
 
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()
@@ -408,7 +408,7 @@ client.on('messageCreate', async (message) => {
           return;
       }
       
-      await solanaConnect.transferGSAIL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount);
+      await solanaConnect.transferGSAIL(await wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount, desc);
 
       // DM to sender
       message.author.send({embeds: [new MessageEmbed()

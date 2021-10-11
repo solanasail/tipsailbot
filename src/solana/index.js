@@ -144,32 +144,38 @@ const getSAILBalance = async (privateKey) => {
   };
 }
 
-const transferSOL = async (fromPrivateKey, toPubKey, sol) => {
+const transferSOL = async (fromPrivateKey, toPubKey, sol, desc) => {
   var fromWallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(fromPrivateKey)));
   const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
   
-  // Add transfer instruction to transaction
-  let transaction = new web3.Transaction().add(
-    web3.SystemProgram.transfer({
-      fromPubkey: fromWallet.publicKey,
-      toPubkey: toPubKey,
-      lamports: sol * web3.LAMPORTS_PER_SOL,
-    }),
-  );
-  
   try {
+    // Add transfer instruction to transaction
+    let transaction = new web3.Transaction().add(
+      web3.SystemProgram.transfer({
+        fromPubkey: fromWallet.publicKey,
+        toPubkey: toPubKey,
+        lamports: sol * web3.LAMPORTS_PER_SOL,
+      }),
+    ).add(new web3.TransactionInstruction({
+      keys: [],
+      programId: new web3.PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+      data: Buffer.from(desc),
+    }));
+
     // Sign transaction, broadcast, and confirm
-    await web3.sendAndConfirmTransaction(
+    let signature = await web3.sendAndConfirmTransaction(
       connection,
       transaction,
       [fromWallet],
     ); 
+
+    console.log(signature);
   } catch (error) {
     return false;
   }
 };
 
-const transferSAIL = async (fromPrivateKey, toPubKey, amount) => {
+const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
   const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
 
   var fromWallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(fromPrivateKey)));
@@ -205,20 +211,26 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount) => {
         [],
         amount * 1000000000, // This is transferring 1 token, not 1000000 tokens
       ),
-    );
+    ).add(new web3.TransactionInstruction({
+      keys: [],
+      programId: new web3.PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+      data: Buffer.from(desc),
+    }));
         
-    await web3.sendAndConfirmTransaction(
+    let signature = await web3.sendAndConfirmTransaction(
       connection,
       transaction,
       [fromWallet],
       {commitment: 'confirmed'},
     );
+
+    console.log(signature);
   } catch (error) {
     return false;
   }  
 }
 
-const transferGSAIL = async (fromPrivateKey, toPubKey, amount) => {
+const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
   const connection = new web3.Connection(web3.clusterApiUrl(CLUSTERS.DEVNET), 'confirmed');
 
   var fromWallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(fromPrivateKey)));
@@ -254,14 +266,19 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount) => {
         [],
         amount * 1000000000, // This is transferring 1 token, not 1000000 tokens
       ),
-    );
+    ).add(new web3.TransactionInstruction({
+      keys: [],
+      programId: new web3.PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+      data: Buffer.from(desc),
+    }));
         
-    await web3.sendAndConfirmTransaction(
+    let signature = await web3.sendAndConfirmTransaction(
       connection,
       transaction,
       [fromWallet],
       {commitment: 'confirmed'},
     );
+    console.log(signature);
   } catch (error) {
     return false;
   }
