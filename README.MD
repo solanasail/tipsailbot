@@ -76,7 +76,8 @@ Provides the current USD value of SOL and some other price-related functions.
 
 ## Disclaimer
 
-This tipsailbot tool is an experimental unsupported version and it is not recommended for any production use.
-Changes might occur which impact applications that use this tipsailbot tool.
+#### This tipsailbot tool is an experimental unsupported version and it is not recommended for any production use.
+#### Changes might occur which impact applications that use this tipsailbot tool.
 
-Licensed under the MIT License;
+#### Licensed under the MIT License
+#### links to https://github.com/solanasail/tipsailbot/blob/master/LICENSE
