@@ -24,7 +24,8 @@ export const TRANSACTION_DESC='.........description.........'
 export const TIP_DESC_LIMIT=50
 
 export const DB_HOST='localhost'
-export const DB_USERNAME='root'
+export const DB_PORT='27017'
+export const DB_USERNAME=''
 export const DB_PASSWORD=''
 export const DB_NAME='tip_sail'
 

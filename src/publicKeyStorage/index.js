@@ -1,10 +1,14 @@
 import mongoose from 'mongoose'
-import { DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME } from '../../config/index.js'
+import { DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_NAME } from '../../config/index.js'
 import userModel from './models/user.js';
 import SessionStorageService from '../wallet/SessionStorageService.js';
 
 const connectDB = async (cluster) => {
-  mongoose.connect(`mongodb://localhost:27017/${DB_NAME}`);
+  mongoose.connect(`mongodb://${DB_HOST}:${DB_PORT}`, {
+    dbName: DB_NAME,
+    user: DB_USERNAME,
+    pass: DB_PASSWORD
+  });
 
   let users = await userModel.find({});
 
