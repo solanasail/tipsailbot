@@ -1,5 +1,5 @@
 import Base58 from 'bs58'
-import { COMMAND_PREFIX, TIP_DESC_LIMIT } from '../config/index.js'
+import { COMMAND_PREFIX, TIP_DESC_LIMIT, EXPECTED_ROLS } from '../config/index.js'
 
 const string2Uint8Array = async (str) => {
   var decodedString;
@@ -15,6 +15,16 @@ const string2Uint8Array = async (str) => {
   };
 
   return arr;
+}
+
+const Uint8Array2String = async (arr) => {
+  try {
+    const buffer = Buffer.from(arr);
+    return Base58.encode(buffer);
+  } catch (error) {
+    return '';
+  }
+  
 }
 
 const validateForTipping = async (args, desc) => {
@@ -77,7 +87,75 @@ const validateForTipping = async (args, desc) => {
   };
 }
 
+const checkGuild = async (client, guild, message) => {
+  if (message.channel.type == "DM") {
+    return guild;
+  }
+
+  if (guild) {
+    return guild;
+  }
+
+  guild = await client.guilds.cache.get(message.guild.id);
+  return guild;
+}
+
+const checkRoleInPublic = async (message) => {
+  let role;
+
+  let satisfiedCount = 0;
+  for (let i = 0; i < EXPECTED_ROLS.length; i++) {
+    const elem = EXPECTED_ROLS[i];
+    
+    role = message.guild.roles.cache.find(function (role) {
+      return role.name == elem;
+    });
+    
+    if (role && message.member.roles.cache.has(role.id)) {
+      satisfiedCount++;
+    }
+  }
+
+  if (satisfiedCount == EXPECTED_ROLS.length) {
+    return true;
+  }
+
+  return false;
+}
+
+const checkRoleInPrivate = async (guild, message) => {
+  if (!guild) {
+    return false;
+  }
+
+  let role;
+  let satisfiedCount = 0;
+  for (let i = 0; i < EXPECTED_ROLS.length; i++) {
+    const elem = EXPECTED_ROLS[i];
+    
+    role = guild.roles.cache.find(function (role) {
+      return role.name == elem;
+    });
+
+    let member = await guild.members.fetch(message.author.id)
+
+    if (role && member.roles.cache.has(role.id)) {
+      satisfiedCount++;
+    }
+  }
+
+  if (satisfiedCount == EXPECTED_ROLS.length) {
+    return true;
+  }
+
+  return false;
+}
+
 export default {
   string2Uint8Array,
-  validateForTipping
+  Uint8Array2String,
+  validateForTipping,
+  checkGuild,
+  checkRoleInPublic,
+  checkRoleInPrivate,
 }

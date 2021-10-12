@@ -17,12 +17,12 @@
 
 ### Commands
 * help
-* import-wallet
+* import-wallet pk
 * register-wallet
 * balance
-* tip <user> <amount>
-* tipsail <user> <amount>
-* tipgsail <user> <amount>
+* tipsol @user1 @user2 ... amount -m desc
+* tipsail @user1 @user2 ... amount -m desc
+* tipgsail @user1 @user2 ... amount -m desc
 
 In a public channel, you can use the these commands.
 You can also use these commands in a private DM channel with the bot.
@@ -60,11 +60,15 @@ Provides the current USD value of SOL and some other price-related functions.
       DEVNET: 'devnet',
     };
 
-    export const COMMAND_PREFIX = '.';
+    export const COMMAND_PREFIX = '?';
 
     export const DISCORD_TOKEN=<YOUR_BOT_TOKEN>
 
     export const gSAIL_TOKEN_ADDRESS=''
     export const SAIL_TOKEN_ADDRESS=''
+
+    export const SOL_Emoji='sol'
+    export const SAIL_Emoji='sail'
+    export const gSAIL_Emoji='gsail'
   ```
 7. Open the cmd and type `node index.js`

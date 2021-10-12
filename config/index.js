@@ -27,3 +27,8 @@ export const DB_HOST='localhost'
 export const DB_USERNAME='root'
 export const DB_PASSWORD=''
 export const DB_NAME='tip_sail'
+
+export const EXPECTED_ROLS=[
+  '@developer',
+  '@tester'
+]

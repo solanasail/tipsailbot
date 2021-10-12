@@ -22,6 +22,7 @@ import DB from './src/publicKeyStorage/index.js'
 
 // Create a new discord client instance
 const client = new Client({ intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES"], partials: ["CHANNEL"] });
+let guild = undefined;
 
 try {
   // connect to database.
@@ -46,6 +47,9 @@ client.on('messageCreate', async (message) => {
   // Ignore the message if the prefix does not fit and if the client authored it.
   if (!message.content.startsWith(COMMAND_PREFIX) || message.author.bot) return;
 
+  // check the guild
+  guild = await Utils.checkGuild(client, guild, message);
+
   let tmpMsg = (message.content + ' ').split(' -m ');
 
   let args = tmpMsg[0].slice(COMMAND_PREFIX.length).trim().split(/ +/);
@@ -56,7 +60,7 @@ client.on('messageCreate', async (message) => {
   if (tmpMsg[1]) {
     desc = tmpMsg[1];
   }
-
+  
   if (command == "register-wallet") { // Register wallet
     if (message.channel.type != "DM") {
       await message.channel.send({embeds: [new MessageEmbed()
@@ -83,7 +87,7 @@ client.on('messageCreate', async (message) => {
     message.author.send({embeds: [new MessageEmbed()
       .setTitle(`${CLUSTERS.DEVNET}`)
       .setColor("#0099ff")
-      .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]}).catch(error => {
+      .setDescription(`Address: ${account.publicKey}\n\nPrivate Key:\n${await Utils.Uint8Array2String(account.privateKey)}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]}).catch(error => {
         console.log(`Cannot send messages to this user`);
       });
     return;
@@ -92,6 +96,16 @@ client.on('messageCreate', async (message) => {
       await message.channel.send({embeds: [new MessageEmbed()
         .setColor("#d93f71")
         .setDescription(`This must be done in a private DM channel`)]});
+      return;
+    }
+
+    // check the role in private channel
+    if (!await Utils.checkRoleInPrivate(guild, message)) {
+      message.author.send({embeds: [new MessageEmbed()
+        .setColor("#d93f71")
+        .setDescription(`You don't have any permission`)]}).catch(error => {
+          console.log(`Cannot send messages to this user`);
+        });
       return;
     }
 
@@ -130,15 +144,22 @@ client.on('messageCreate', async (message) => {
     message.author.send({embeds: [new MessageEmbed()
       .setTitle(`${CLUSTERS.DEVNET}`)
       .setColor("#0099ff")
-      .setDescription(`Address: ${account.publicKey}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]} ).catch(error => {
+      .setDescription(`Address: ${account.publicKey}\n\nPrivate Key:\n${await Utils.Uint8Array2String(account.privateKey)}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]} ).catch(error => {
         console.log(`Cannot send messages to this user`);
       });
     return;
   } else if (command == "help") { // Display help
+    if (message.channel.type == "DM") {
+      return;
+    }
+
     message.author.send({ embeds: [new MessageEmbed()
       .setColor("#0099ff")
       .setTitle('Help')
-      .setDescription(`${COMMAND_PREFIX}register-wallet\n${COMMAND_PREFIX}import-wallet <PK>\n${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount> -m <description>\n${COMMAND_PREFIX}tipsail <user> <amount> -m <description>\n${COMMAND_PREFIX}tipgsail <user> <amount> -m <description>`)] }).catch(error => {
+      .setDescription(
+        `${COMMAND_PREFIX}register-wallet\n` + 
+        (await Utils.checkRoleInPublic(message) ? `${COMMAND_PREFIX}import-wallet <PK>\n` : ``)  +
+        `${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount> -m <description>\n${COMMAND_PREFIX}tipsail <user> <amount> -m <description>\n${COMMAND_PREFIX}tipgsail <user> <amount> -m <description>`)] }).catch(error => {
         console.log(`Cannot send messages to this user`);
       });
     return;
