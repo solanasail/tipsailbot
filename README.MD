@@ -10,6 +10,7 @@
 - [Features](#features)
 - [Architecture](#architecture)
 - [Deployment](#deployment)
+- [Disclaimer](#disclaimer)
 
 ## Features
 * send SOL, gSAIL, SAIL to public keys or by tagging a discord user
@@ -72,3 +73,10 @@ Provides the current USD value of SOL and some other price-related functions.
     export const gSAIL_Emoji='gsail'
   ```
 7. Open the cmd and type `node index.js`
+
+## Disclaimer
+
+This tipsailbot tool is an experimental unsupported version and it is not recommended for any production use.
+Changes might occur which impact applications that use this tipsailbot tool.
+
+Licensed under the MIT License;
