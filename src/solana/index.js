@@ -197,9 +197,14 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     return false;
   }
 
-  let toTokenAccount = await token.getOrCreateAssociatedAccountInfo(
-    new web3.PublicKey(toPubKey),
-  );
+  let toTokenAccount;
+  try {
+    toTokenAccount = await token.getOrCreateAssociatedAccountInfo(
+      new web3.PublicKey(toPubKey),
+    );
+  } catch (error) {
+    return false;
+  }
 
   try {
     var transaction = new web3.Transaction().add(
@@ -252,9 +257,14 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     return false;
   }
 
-  let toTokenAccount = await token.getOrCreateAssociatedAccountInfo(
-    new web3.PublicKey(toPubKey),
-  );
+  let toTokenAccount;
+  try {
+    toTokenAccount = await token.getOrCreateAssociatedAccountInfo(
+      new web3.PublicKey(toPubKey),
+    );
+  } catch (error) {
+    return false;
+  }
 
   try {
     var transaction = new web3.Transaction().add(
