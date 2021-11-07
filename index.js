@@ -234,7 +234,7 @@ client.on('messageCreate', async (message) => {
       if (!await Wallet.getPublicKey(elem)) {
         await message.channel.send({embeds: [new MessageEmbed()
           .setColor("#d93f71")
-          .setDescription(`<@!${elem}> dosn't have the wallet`)]});
+          .setDescription(`<@!${elem}> doesn't have the wallet`)]});
         continue;
       }
 
@@ -323,7 +323,7 @@ client.on('messageCreate', async (message) => {
       if (!await Wallet.getPublicKey(elem)) {
         await message.channel.send({embeds: [new MessageEmbed()
           .setColor("#d93f71")
-          .setDescription(`<@!${elem}> dosn't have the wallet`)]});
+          .setDescription(`<@!${elem}> doesn't have the wallet`)]});
         continue;
       }
 
@@ -413,7 +413,7 @@ client.on('messageCreate', async (message) => {
       if (!await Wallet.getPublicKey(elem)) {
         await message.channel.send({embeds: [new MessageEmbed()
           .setColor("#d93f71")
-          .setDescription(`<@!${elem}> dosn't have the wallet`)]});
+          .setDescription(`<@!${elem}> doesn't have the wallet`)]});
         continue;
       }
       
