@@ -173,6 +173,8 @@ const transferSOL = async (fromPrivateKey, toPubKey, sol, desc) => {
   } catch (error) {
     return false;
   }
+
+  return true;
 };
 
 const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
@@ -232,7 +234,9 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     console.log(signature);
   } catch (error) {
     return false;
-  }  
+  }
+
+  return true;
 }
 
 const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
@@ -292,6 +296,8 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
   } catch (error) {
     return false;
   }
+
+  return true;
 }
 
 export default {

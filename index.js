@@ -85,7 +85,7 @@ client.on('messageCreate', async (message) => {
     const SAIL = await solanaConnect.getSAILBalance(account.privateKey);
 
     // convert the balance to dolar
-    const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
+    const dollarValue = await PriceService.getDollarValueForSol(sol.amount) + await PriceService.getDollarValueForGSail(gSAIL.amount) + await PriceService.getDollarValueForSail(SAIL.amount);
 
     await message.author.send({embeds: [new MessageEmbed()
       .setTitle(`${CLUSTERS.DEVNET}`)
@@ -144,7 +144,7 @@ client.on('messageCreate', async (message) => {
     const SAIL = await solanaConnect.getSAILBalance(account.privateKey);
 
     // convert the balance to dolar
-    const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
+    const dollarValue = await PriceService.getDollarValueForSol(sol.amount) + await PriceService.getDollarValueForGSail(gSAIL.amount) + await PriceService.getDollarValueForSail(SAIL.amount);
 
     await message.author.send({embeds: [new MessageEmbed()
       .setTitle(`${CLUSTERS.DEVNET}`)
@@ -197,7 +197,7 @@ client.on('messageCreate', async (message) => {
     const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
 
     // convert the balance to dolar
-    const dollarValue = await PriceService.getDollarValueForSol(sol.amount);
+    const dollarValue = await PriceService.getDollarValueForSol(sol.amount) + await PriceService.getDollarValueForGSail(gSAIL.amount) + await PriceService.getDollarValueForSail(SAIL.amount);
     
     await message.author.send({embeds: [new MessageEmbed()
       .setAuthor(message.author.tag)
