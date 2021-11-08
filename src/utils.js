@@ -87,19 +87,6 @@ const validateForTipping = async (args, desc) => {
   };
 }
 
-const checkGuild = async (client, guild, message) => {
-  if (message.channel.type == "DM") {
-    return guild;
-  }
-
-  if (guild) {
-    return guild;
-  }
-
-  guild = await client.guilds.cache.get(message.guild.id);
-  return guild;
-}
-
 const checkRoleInPublic = async (message) => {
   let role;
 
@@ -155,7 +142,6 @@ export default {
   string2Uint8Array,
   Uint8Array2String,
   validateForTipping,
-  checkGuild,
   checkRoleInPublic,
   checkRoleInPrivate,
 }

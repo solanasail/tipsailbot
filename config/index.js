@@ -6,7 +6,7 @@ export const CLUSTERS = {
 
 export const COMMAND_PREFIX='?';
 
-export const DISCORD_TOKEN='ODkyMTI0Mzk1MDg5Mjk3NDg4.YVIVlg.ZOycFiSPymyjdGEr_-09oEXtzL0'
+export const DISCORD_TOKEN='ODkyMTI0Mzk1MDg5Mjk3NDg4.YVIVlg.W9iA8asQazuusiLSUvjJwyy6z7E'
 
 export const gSAIL_TOKEN_ADDRESS='so2UmtgXmc1mMk7GKNtPfCNeWuDjEMUa5JsEGYg8x7t'
 export const SAIL_TOKEN_ADDRESS='4WkdBnsUt3zyWkhVbXgY9aQeR64ri42ioYTuaZp8WATn'
@@ -28,6 +28,8 @@ export const DB_PORT='27017'
 export const DB_USERNAME=''
 export const DB_PASSWORD=''
 export const DB_NAME='tip_sail'
+
+export const GUILD_ID='892131767308386304'
 
 export const EXPECTED_ROLS=[
   '@developer',
