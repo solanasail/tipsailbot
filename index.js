@@ -608,22 +608,62 @@ client.on('messageCreate', async (message) => {
     // get the balance of gSAIL
     const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
 
-    if (label == "SAIL" && amount > SAIL.amount) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`Not enough ${label}`)]
-      }).catch(error => {
-        console.log(`Cannot send messages`);
-      });
-      return;
+    // validate SAIL
+    if (label == "SAIL") {
+      if (amount > SAIL.amount) {
+        await message.channel.send({
+          embeds: [new MessageEmbed()
+            .setColor(dangerColor)
+            .setDescription(`Not enough ${label}`)]
+        }).catch(error => {
+          console.log(`Cannot send messages`);
+        });
+        return;
+      }
+
+      if (amount < 1 || 1000 < amount) {
+        await message.channel.send({
+          embeds: [new MessageEmbed()
+            .setColor(dangerColor)
+            .setDescription(`SAIL must be between 1 to 1000`)]
+        }).catch(error => {
+          console.log(`Cannot send messages`);
+        });
+        return;
+      }
     }
 
-    if (label == "gSAIL" && amount > gSAIL.amount) {
+    // validate gSAIL
+    if (label == "gSAIL") {
+      if (amount > gSAIL.amount) {
+        await message.channel.send({
+          embeds: [new MessageEmbed()
+            .setColor(dangerColor)
+            .setDescription(`Not enough ${label}`)]
+        }).catch(error => {
+          console.log(`Cannot send messages`);
+        });
+        return;
+      }
+
+      if (amount < 1 || 100 < amount) {
+        await message.channel.send({
+          embeds: [new MessageEmbed()
+            .setColor(dangerColor)
+            .setDescription(`gSAIL must be between 1 to 100`)]
+        }).catch(error => {
+          console.log(`Cannot send messages`);
+        });
+        return;
+      }
+    }
+
+    // validate the max people
+    if (maxPeople < 1 || 20 < maxPeople) {
       await message.channel.send({
         embeds: [new MessageEmbed()
           .setColor(dangerColor)
-          .setDescription(`Not enough ${label}`)]
+          .setDescription(`Max people must be between 1 to 20`)]
       }).catch(error => {
         console.log(`Cannot send messages`);
       });
@@ -661,7 +701,7 @@ client.on('messageCreate', async (message) => {
       }
 
       boardInfo.users.push(user.id)
-      
+
       if (label == 'SAIL' && !await solanaConnect.transferSAIL(await Wallet.getPrivateKey(boardInfo.investor), await Wallet.getPublicKey(user.id), amount / maxPeople, `Rain ${label}`)) {
         console.log('error')
         return;

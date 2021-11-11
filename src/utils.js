@@ -118,7 +118,7 @@ const validateForRaining = async (args) => {
   return {
     status: true,
     amount: amount,
-    maxPeople: maxPeople,
+    maxPeople: Math.floor(maxPeople),
   };
 }
 
