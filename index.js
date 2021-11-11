@@ -673,7 +673,7 @@ client.on('messageCreate', async (message) => {
     const boardInfo = {
       collector: null,
       investor: message.author.id,
-      limit: 0,
+      limit: maxPeople,
       amount: 0,
       users: [],
     }
@@ -696,7 +696,7 @@ client.on('messageCreate', async (message) => {
     boardInfo.collector = rainBoard.createReactionCollector({ filter });
 
     boardInfo.collector.on('collect', async (reaction, user) => {
-      if (boardInfo.users.findIndex((elem) => elem == user.id) != -1) {
+      if (boardInfo.users.findIndex((elem) => elem == user.id) != -1 || boardInfo.limit <= boardInfo.users.length) {
         return;
       }
 
