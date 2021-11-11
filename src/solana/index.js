@@ -140,7 +140,7 @@ const getSAILBalance = async (privateKey) => {
 
   return {
     isExistToken: true,
-    amount: account.amount / 1000000000
+    amount: account.amount / 1000000
   };
 }
 
@@ -216,7 +216,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
         toTokenAccount.address,
         fromWallet.publicKey,
         [],
-        amount * 1000000000, // This is transferring 1 token, not 1000000 tokens
+        amount * 1000000, // This is transferring 1 token, not 1000000 tokens
       ),
     ).add(new web3.TransactionInstruction({
       keys: [],
@@ -278,7 +278,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
         toTokenAccount.address,
         fromWallet.publicKey,
         [],
-        amount * 1000000000, // This is transferring 1 token, not 1000000 tokens
+        amount * 1000000000, // This is transferring 1 token, not 1000000000 tokens
       ),
     ).add(new web3.TransactionInstruction({
       keys: [],

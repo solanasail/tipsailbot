@@ -6,7 +6,7 @@ export const CLUSTERS = {
 
 export const COMMAND_PREFIX='?';
 
-export const DISCORD_TOKEN='ODkyMTI0Mzk1MDg5Mjk3NDg4.YVIVlg.W9iA8asQazuusiLSUvjJwyy6z7E'
+export const DISCORD_TOKEN='ODkyMTI0Mzk1MDg5Mjk3NDg4.YVIVlg.KPLE9Naq2JUpaQIerSw9yXoeohY'
 
 export const gSAIL_TOKEN_ADDRESS='so2UmtgXmc1mMk7GKNtPfCNeWuDjEMUa5JsEGYg8x7t'
 export const SAIL_TOKEN_ADDRESS='4WkdBnsUt3zyWkhVbXgY9aQeR64ri42ioYTuaZp8WATn'

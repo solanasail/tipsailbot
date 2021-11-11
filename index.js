@@ -181,13 +181,11 @@ client.on('messageCreate', async (message) => {
         .setDescription(
           `${COMMAND_PREFIX}register-wallet\n` +
           (await Utils.checkRoleInPublic(message) ? `${COMMAND_PREFIX}import-wallet <PK>\n` : ``) +
-          `${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount> -m <description>\n${COMMAND_PREFIX}tipsail <user> <amount> -m <description>\n${COMMAND_PREFIX}tipgsail <user> <amount> -m <description>\n\n${COMMAND_PREFIX}rainsol <amount> <max people>\n${COMMAND_PREFIX}raingsail <amount> <max people>\n${COMMAND_PREFIX}rainsail <amount> <max people>`)]
+          `${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount> -m <description>\n${COMMAND_PREFIX}tipsail <user> <amount> -m <description>\n${COMMAND_PREFIX}tipgsail <user> <amount> -m <description>\n\n${COMMAND_PREFIX}raingsail <amount> <max people>\n${COMMAND_PREFIX}rainsail <amount> <max people>`)]
     }).catch(error => {
       console.log(`Cannot send messages to this user`);
     });
     return;
-  } else if (command == "test") {
-    
   }
 
   if (!(await Wallet.getPrivateKey(message.author.id))) { // if you doesn't logged in
@@ -582,43 +580,123 @@ client.on('messageCreate', async (message) => {
       console.log('gsail emoji error');
     }
     return;
-  } else if (command == "rainsail") {
+  } else if (command == "rainsail" || command == "raingsail") {
     if (message.channel.type == "DM") {
       return;
     }
 
-    // try {
-    //   let tmpCache = await message.guild.emojis.cache;
-    //   const sail_emoji = tmpCache.find(emoji => emoji.name == SAIL_Emoji);
-    //   await message.react(sail_emoji);
-    // } catch (error) {
-    //   console.log('sail emoji error');
-    // }
+    const label = (command == 'rainsail') ? 'SAIL' : 'gSAIL';
 
-    // const boardInfo = {
-    //   collector: null,
-    //   investor: message.author.id,
-    //   limit: 0,
-    //   amount: 0,
-    //   users: [],
-    // }
+    let validation = await Utils.validateForRaining(args);
 
-    // const rainBoard = await message.channel.send({
-    //   embeds: [new MessageEmbed()
-    //     .setTitle('Rain')
-    //     .setColor(infoColor)
-    //     .setDescription(`Hey? do you accept?`)]
-    // }).catch(error => {
-    //   console.log(`Cannot send messages`);
-    // });
-    // await rainBoard.react("✅");
+    if (!validation.status) {
+      await message.channel.send({
+        embeds: [new MessageEmbed()
+          .setColor(dangerColor)
+          .setDescription(validation.msg)]
+      }).catch(error => {
+        console.log(`Cannot send messages`);
+      });
+      return;
+    }
 
-    // const filter = (reaction, user) => !user.bot && user.id != boardInfo.investor && ["✅"].includes(reaction.emoji.name);
-    // boardInfo.collector = rainBoard.createReactionCollector({ filter });
+    let amount = validation.amount;
+    let maxPeople = validation.maxPeople;
 
-    // boardInfo.collector.on('collect', async (reaction, user) => {
-    //   boardInfo.users.push(user.id)
-    // })
+    // get the balance of SAIL
+    const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
+    // get the balance of gSAIL
+    const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
+
+    if (label == "SAIL" && amount > SAIL.amount) {
+      await message.channel.send({
+        embeds: [new MessageEmbed()
+          .setColor(dangerColor)
+          .setDescription(`Not enough ${label}`)]
+      }).catch(error => {
+        console.log(`Cannot send messages`);
+      });
+      return;
+    }
+
+    if (label == "gSAIL" && amount > gSAIL.amount) {
+      await message.channel.send({
+        embeds: [new MessageEmbed()
+          .setColor(dangerColor)
+          .setDescription(`Not enough ${label}`)]
+      }).catch(error => {
+        console.log(`Cannot send messages`);
+      });
+      return;
+    }
+
+    const boardInfo = {
+      collector: null,
+      investor: message.author.id,
+      limit: 0,
+      amount: 0,
+      users: [],
+    }
+
+    const rainBoard = await message.channel.send({
+      embeds: [new MessageEmbed()
+        .setTitle(`Rain ${label}`)
+        .setColor(infoColor)
+        .addFields(
+          { name: `Prize`, value: `${amount} ${label}`, inline: true },
+          { name: `People`, value: `${maxPeople} / ${boardInfo.users.length}`, inline: true },
+        )
+        .setDescription(`Do you like it?`)]
+    }).catch(error => {
+      console.log(`Cannot send messages`);
+    });
+    await rainBoard.react("✅");
+
+    const filter = (reaction, user) => !user.bot && user.id != boardInfo.investor && ["✅"].includes(reaction.emoji.name);
+    boardInfo.collector = rainBoard.createReactionCollector({ filter });
+
+    boardInfo.collector.on('collect', async (reaction, user) => {
+      if (boardInfo.users.findIndex((elem) => elem == user.id) != -1) {
+        return;
+      }
+
+      if (label == 'SAIL' && !await solanaConnect.transferSAIL(await Wallet.getPrivateKey(boardInfo.investor), await Wallet.getPublicKey(user.id), amount / maxPeople, `Rain ${label}`)) {
+        console.log('error')
+        return;
+      }
+
+      if (label == 'gSAIL' && !await solanaConnect.transferGSAIL(await Wallet.getPrivateKey(boardInfo.investor), await Wallet.getPublicKey(user.id), amount / maxPeople, `Rain ${label}`)) {
+        console.log('error')
+        return;
+      }
+
+      boardInfo.users.push(user.id)
+
+      try {
+        // DM to recipient
+        let fetchedUser = await client.users.fetch(user.id, false);
+        await fetchedUser.send({
+          embeds: [new MessageEmbed()
+            .setColor(infoColor)
+            .setTitle(`Rain ${label}`)
+            .setDescription(`You received ${amount / maxPeople} ${label}`)]
+        });
+      } catch (error) {
+        console.log(`Cannot send messages to this user`);
+      }
+
+      rainBoard.edit({
+        embeds: [new MessageEmbed()
+          .setTitle(`Rain ${label}`)
+          .setColor(infoColor)
+          .addFields(
+            { name: `Prize`, value: `${amount} ${label}`, inline: true },
+            { name: `People`, value: `${maxPeople} / ${boardInfo.users.length}`, inline: true },
+          )
+          .setDescription(`Do you like it?`)
+        ]
+      })
+    })
   }
 });
 
