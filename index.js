@@ -660,6 +660,8 @@ client.on('messageCreate', async (message) => {
         return;
       }
 
+      boardInfo.users.push(user.id)
+      
       if (label == 'SAIL' && !await solanaConnect.transferSAIL(await Wallet.getPrivateKey(boardInfo.investor), await Wallet.getPublicKey(user.id), amount / maxPeople, `Rain ${label}`)) {
         console.log('error')
         return;
@@ -669,8 +671,6 @@ client.on('messageCreate', async (message) => {
         console.log('error')
         return;
       }
-
-      boardInfo.users.push(user.id)
 
       try {
         // DM to recipient
