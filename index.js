@@ -169,7 +169,7 @@ client.on('messageCreate', async (message) => {
       console.log(`Cannot send messages to this user`);
     });
     return;
-  } else if (command == "help") { // Display help
+  } else if (command == "helptip") { // Display help
     if (message.channel.type == "DM") {
       return;
     }
@@ -684,7 +684,7 @@ client.on('messageCreate', async (message) => {
         .setColor(infoColor)
         .addFields(
           { name: `Prize`, value: `${amount} ${label}`, inline: true },
-          { name: `People`, value: `${maxPeople} / ${boardInfo.users.length}`, inline: true },
+          { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
         )
         .setDescription(`Do you like it?`)]
     }).catch(error => {
@@ -696,11 +696,11 @@ client.on('messageCreate', async (message) => {
     boardInfo.collector = rainBoard.createReactionCollector({ filter });
 
     boardInfo.collector.on('collect', async (reaction, user) => {
-      if (boardInfo.users.findIndex((elem) => elem == user.id) != -1 || boardInfo.limit <= boardInfo.users.length) {
+      if (boardInfo.users.findIndex((elem) => elem.id == user.id) != -1 || boardInfo.limit <= boardInfo.users.length) {
         return;
       }
 
-      boardInfo.users.push(user.id)
+      boardInfo.users.push(user)
 
       if (label == 'SAIL' && !await solanaConnect.transferSAIL(await Wallet.getPrivateKey(boardInfo.investor), await Wallet.getPublicKey(user.id), amount / maxPeople, `Rain ${label}`)) {
         console.log('error')
@@ -724,16 +724,20 @@ client.on('messageCreate', async (message) => {
       } catch (error) {
         console.log(`Cannot send messages to this user`);
       }
-
+      let tmpDesc = ''
+      for (let i = 0; i < boardInfo.users.length; i++) {
+        const elem = boardInfo.users[i];
+        tmpDesc += elem.username + ` received ${amount / maxPeople} ${label}` + '\n'
+      }
       rainBoard.edit({
         embeds: [new MessageEmbed()
           .setTitle(`Rain ${label}`)
           .setColor(infoColor)
           .addFields(
             { name: `Prize`, value: `${amount} ${label}`, inline: true },
-            { name: `People`, value: `${maxPeople} / ${boardInfo.users.length}`, inline: true },
+            { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
           )
-          .setDescription(`Do you like it?`)
+          .setDescription(tmpDesc)
         ]
       })
     })
