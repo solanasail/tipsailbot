@@ -1,6 +1,6 @@
 # WISHLIST
 
-- [ ] allow specific discord roles as a target (eg `rainsail @sailors`)
+- [ ] Allow specific discord roles as a target (eg `rainsail @sailors`)
 
 - [ ] Additional options/parameters to the available actions (`balance`, `tipTOKEN`, `rainTOKEN`) to allow:
 
