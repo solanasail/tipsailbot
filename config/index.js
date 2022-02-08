@@ -1,8 +1,10 @@
-export const CLUSTERS = {
+const CLUSTERS = {
   MAINNET: 'mainnet-beta',
   TESTNET: 'testnet',
   DEVNET: 'devnet',
 };
+
+export const ACTIVE_CLUSTER=CLUSTERS.DEVNET;
 
 export const COMMAND_PREFIX='?';
 
