@@ -24,6 +24,8 @@
 * tipsol @user1 @user2 ... amount -m desc
 * tipsail @user1 @user2 ... amount -m desc
 * tipgsail @user1 @user2 ... amount -m desc
+* rainsail amount maxpeople
+* raingsail amount maxpeople
 
 In a public channel, you can use the these commands.
 You can also use these commands in a private DM channel with the bot.
