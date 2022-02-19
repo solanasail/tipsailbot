@@ -1,5 +1,5 @@
 import Base58 from 'bs58'
-import { COMMAND_PREFIX, TIP_DESC_LIMIT, EXPECTED_ROLS } from '../config/index.js'
+import { COMMAND_PREFIX, TIP_DESC_LIMIT, EXPECTED_ROLES } from '../config/index.js'
 
 const string2Uint8Array = async (str) => {
   var decodedString;
@@ -126,8 +126,8 @@ const checkRoleInPublic = async (message) => {
   let role;
 
   let satisfiedCount = 0;
-  for (let i = 0; i < EXPECTED_ROLS.length; i++) {
-    const elem = EXPECTED_ROLS[i];
+  for (let i = 0; i < EXPECTED_ROLES.length; i++) {
+    const elem = EXPECTED_ROLES[i];
 
     role = message.guild.roles.cache.find(function (role) {
       return role.name == elem;
@@ -138,7 +138,7 @@ const checkRoleInPublic = async (message) => {
     }
   }
 
-  if (satisfiedCount == EXPECTED_ROLS.length) {
+  if (satisfiedCount == EXPECTED_ROLES.length) {
     return true;
   }
 
@@ -152,8 +152,8 @@ const checkRoleInPrivate = async (guild, message) => {
 
   let role;
   let satisfiedCount = 0;
-  for (let i = 0; i < EXPECTED_ROLS.length; i++) {
-    const elem = EXPECTED_ROLS[i];
+  for (let i = 0; i < EXPECTED_ROLES.length; i++) {
+    const elem = EXPECTED_ROLES[i];
 
     role = guild.roles.cache.find(function (role) {
       return role.name == elem;
@@ -166,7 +166,7 @@ const checkRoleInPrivate = async (guild, message) => {
     }
   }
 
-  if (satisfiedCount == EXPECTED_ROLS.length) {
+  if (satisfiedCount == EXPECTED_ROLES.length) {
     return true;
   }
 

@@ -3,10 +3,16 @@ import splToken from '@solana/spl-token'
 import SessionStorageService from '../wallet/SessionStorageService.js';
 import {
   ACTIVE_CLUSTER,
+  TRANSACTION_EXPLORERS,
   gSAIL_TOKEN_ADDRESS,
-  SAIL_TOKEN_ADDRESS
+  SAIL_TOKEN_ADDRESS,
 } from '../../config/index.js'
 import DB from '../publicKeyStorage/index.js'
+
+function txLink( signature, explorer = TRANSACTION_EXPLORERS.SOLSCAN ) {
+  console.assert( signature )
+  return explorer.replace( '%s', signature );
+}
 
 const createWallet = async (id) => {
   const connection = new web3.Connection(web3.clusterApiUrl(ACTIVE_CLUSTER), 'confirmed');
@@ -150,7 +156,6 @@ const transferSOL = async (fromPrivateKey, toPubKey, sol, desc) => {
       fromWallet = web3.Keypair.fromSecretKey(new Uint8Array(Object.values(fromPrivateKey)));
 
   try {
-
     // Add transfer instruction to transaction
     let transaction = new web3.Transaction().add(
       web3.SystemProgram.transfer({
@@ -173,7 +178,7 @@ const transferSOL = async (fromPrivateKey, toPubKey, sol, desc) => {
 
     console.log(signature);
   } catch (error) {
-    console.log(`error: ${error},\nstack: ${error.stack}`);
+    console.log(`error: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -199,7 +204,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       fromWallet.publicKey
     )
   } catch (error) {
-    console.log(`error: ${error},\nstack: ${error.stack}`);
+    console.log(`error: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -209,7 +214,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       new web3.PublicKey(toPubKey),
     );
   } catch (error) {
-    console.log(`error: ${error},\nstack: ${error.stack}`);
+    console.log(`error: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -238,7 +243,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
 
     console.log(signature);
   } catch (error) {
-    console.log(`error: ${error},\nstack: ${error.stack}`);
+    console.log(`error: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -264,7 +269,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       fromWallet.publicKey
     )
   } catch (error) {
-    console.log(`error: ${error},\nstack: ${error.stack}`);
+    console.log(`error: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -274,7 +279,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       new web3.PublicKey(toPubKey),
     );
   } catch (error) {
-    console.log(`error: ${error},\nstack: ${error.stack}`);
+    console.log(`error: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -302,7 +307,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     );
     console.log(signature);
   } catch (error) {
-    console.log(`error: ${error},\nstack: ${error.stack}`);
+    console.log(`error: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -318,4 +323,5 @@ export default {
   transferSOL,
   transferSAIL,
   transferGSAIL,
+  txLink,
 };

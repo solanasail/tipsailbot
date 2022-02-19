@@ -14,6 +14,7 @@ import {
   SOL_Emoji,
   TRANSACTION_DESC,
   GUILD_ID,
+  LOG_CHANNEL_ID,
 } from './config/index.js'
 import Utils from './src/utils.js'
 
@@ -50,19 +51,25 @@ client.on('disconnected', function () {
 });
 
 client.on('messageCreate', async (message) => {
+
+  console.log(`Message: ${message}`);
+
   // Ignore the message if the prefix does not fit and if the client authored it.
   if (!message.content.startsWith(COMMAND_PREFIX) || message.author.bot) return;
 
   let tmpMsg = (message.content + ' ').split(' -m ');
 
   let args = tmpMsg[0].slice(COMMAND_PREFIX.length).trim().split(/ +/);
+
+  console.log(`Args: ${args}`);
+
   let command = args[0];
-  let desc = TRANSACTION_DESC;
   args = args.slice(1);
 
-  if (tmpMsg[1]) {
-    desc = tmpMsg[1];
-  }
+  let desc = tmpMsg[1] ?? TRANSACTION_DESC;
+
+  console.log(`Description: ${desc}`);
+  console.log(`Command: ${command}`);
 
   if (command == "register-wallet") { // Register wallet
     if (message.channel.type != "DM") {
@@ -307,8 +314,8 @@ client.on('messageCreate', async (message) => {
 
       let msgToSender, msgToRecipient
       if( success ) {
-        msgToSender    = `You sent ${amount} SOL to <@!${elem}>\n\nTransaction: ${signature}\n\nDescription:\n${desc}`
-        msgToRecipient = `You received ${amount} SOL from <@!${message.author.id}>\n\nTransaction: ${signature}\n\nDescription:\n${desc}`
+        msgToSender    = `You sent ${amount} SOL to <@!${elem}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
+        msgToRecipient = `You received ${amount} SOL from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
       } else {
         msgToSender    = `Could not send SOL to <@!${elem}>\n\nError:\n${error}`
         msgToRecipient = `Failed to receive SOL from <@!${message.author.id}>\n\nError:\n${error}`
@@ -436,8 +443,8 @@ client.on('messageCreate', async (message) => {
 
       let msgToSender, msgToRecipient
       if( success ) {
-        msgToSender    = `You sent ${amount} SAIL to <@!${elem}>\nTransaction: ${signature}\n\nDescription:\n${desc}`
-        msgToRecipient = `You received ${amount} SAIL from <@!${message.author.id}>\nTransaction: ${signature}\n\nDescription:\n${desc}`
+        msgToSender    = `You sent ${amount} SAIL to <@!${elem}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
+        msgToRecipient = `You received ${amount} SAIL from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
       } else {
         msgToSender    = `Could not send SAIL to <@!${elem}>\n\nError:\n${error}`
         msgToRecipient = `Failed to receive SAIL from <@!${message.author.id}>\n\nError:\n${error}`
@@ -566,8 +573,8 @@ client.on('messageCreate', async (message) => {
 
       let msgToSender, msgToRecipient
       if( success ) {
-        msgToSender    = `You sent ${amount} gSAIL to <@!${elem}>\nTransaction: ${signature}\n\nDescription:\n${desc}`
-        msgToRecipient = `You received ${amount} gSAIL from <@!${message.author.id}>\nTransaction: ${signature}\n\nDescription:\n${desc}`
+        msgToSender    = `You sent ${amount} gSAIL to <@!${elem}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
+        msgToRecipient = `You received ${amount} gSAIL from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
       } else {
         msgToSender    = `Could not send gSAIL to <@!${elem}>\n\nError:\n${error}`
         msgToRecipient = `Failed to receive gSAIL from <@!${message.author.id}>\n\nError:\n${error}`
@@ -683,7 +690,7 @@ client.on('messageCreate', async (message) => {
     }
 
     // validate the max people
-    if (maxPeople < 1 || 40 < maxPeople) {
+    if (maxPeople < 1 || 40 <= maxPeople) {
       await message.channel.send({
         embeds: [new MessageEmbed()
           .setColor(dangerColor)
@@ -700,9 +707,11 @@ client.on('messageCreate', async (message) => {
       limit: maxPeople,
       amount: 0,
       users: [],
+      uiMain: null,
+      uiLog: null,
     }
 
-    const rainBoard = await message.channel.send({
+    boardInfo.uiMain = await message.channel.send({
       embeds: [new MessageEmbed()
         .setTitle(`Rain ${label}`)
         .setColor(infoColor)
@@ -714,10 +723,27 @@ client.on('messageCreate', async (message) => {
     }).catch(error => {
       console.log(`Cannot send messages`);
     });
-    await rainBoard.react("✅");
+    await boardInfo.uiMain.react("✅");
+
+    if( message.channel.id !=  LOG_CHANNEL_ID ) {
+      boardInfo.uiLog = await guild.channels.cache.get(LOG_CHANNEL_ID).send({
+        embeds: [new MessageEmbed()
+          .setTitle(`Rain ${label}`)
+          .setColor(infoColor)
+          .addFields(
+            { name: `Prize`, value: `${amount} ${label}`, inline: true },
+            { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
+          ) ]
+      }).catch(error => {
+        console.log(`Cannot send messages`);
+      });
+    } else {
+      boardInfo.uiLog = boardInfo.uiMain
+    }
 
     const filter = (reaction, user) => !user.bot && user.id != boardInfo.investor && ["✅"].includes(reaction.emoji.name);
-    boardInfo.collector = rainBoard.createReactionCollector({ filter });
+    boardInfo.collector = boardInfo.uiMain.createReactionCollector({ filter });
+
 
     boardInfo.collector.on('collect', async (reaction, user) => {
       if (boardInfo.users.findIndex((elem) => elem.id == user.id) != -1 || boardInfo.limit <= boardInfo.users.length) {
@@ -738,7 +764,7 @@ client.on('messageCreate', async (message) => {
         return;
       }
 
-      const msg = `You received ${amount / maxPeople} ${label}\nTransaction: ${signature}`
+      const msg = `You received ${amount / maxPeople} ${label}\nTransaction: ${ solanaConnect.txLink(signature) }`
       try {
         // DM to recipient
         let fetchedUser = await client.users.fetch(user.id, false);
@@ -752,12 +778,27 @@ client.on('messageCreate', async (message) => {
       } catch (error) {
         console.log(`Cannot send messages to this user`);
       }
-      let tmpDesc = ''
+
+      let userList = ''
       for (let i = 0; i < boardInfo.users.length; i++) {
-        const elem = boardInfo.users[i];
-        tmpDesc += elem.username + ` received ${amount / maxPeople} ${label}` + '\n'
+        const user = boardInfo.users[i];
+        userList += user.username + ` received ${amount / maxPeople} ${label}` + '\n'
       }
-      rainBoard.edit({
+
+      if( boardInfo.uiMain != boardInfo.uiLog ) {
+        boardInfo.uiMain.edit({
+          embeds: [new MessageEmbed()
+            .setTitle(`Rain ${label}`)
+            .setColor(infoColor)
+            .addFields(
+              { name: `Prize`, value: `${amount} ${label}`, inline: true },
+              { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
+            )
+          ]
+        })
+      }
+
+      boardInfo.uiLog.edit({
         embeds: [new MessageEmbed()
           .setTitle(`Rain ${label}`)
           .setColor(infoColor)
@@ -765,7 +806,7 @@ client.on('messageCreate', async (message) => {
             { name: `Prize`, value: `${amount} ${label}`, inline: true },
             { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
           )
-          .setDescription(tmpDesc)
+          .setDescription(userList)
         ]
       })
     })

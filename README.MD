@@ -24,6 +24,8 @@
 * tipsol @user1 @user2 ... amount -m desc
 * tipsail @user1 @user2 ... amount -m desc
 * tipgsail @user1 @user2 ... amount -m desc
+* rainsail amount maxpeople
+* raingsail amount maxpeople
 
 In a public channel, you can use the these commands.
 You can also use these commands in a private DM channel with the bot.
@@ -53,13 +55,16 @@ Provides the current USD value of SOL and some other price-related functions.
 3. run `npm install @solana/spl-token`
 4. run `npm install discord.js axios dotenv`
 5. run `npm install base58`
-6. add a new `config` folder, inside `config`, add an `index.js` file inside with the following content (DO NOT COMMIT THIS config folder. JUST IGNORE):
+6. run `npm install mongoose`
+7. add a new `config` folder, inside `config`, add an `index.js` file inside with the following content (DO NOT COMMIT THIS config folder. JUST IGNORE):
   ```
-    export const CLUSTERS = {
+    const CLUSTERS = {
       MAINNET: 'mainnet-beta',
-      TESTNET: 'testnet',
       DEVNET: 'devnet',
+      TESTNET: 'testnet',
     };
+    
+    export const ACTIVE_CLUSTER=CLUSTERS.DEVNET;
 
     export const COMMAND_PREFIX = '?';
 
@@ -71,6 +76,9 @@ Provides the current USD value of SOL and some other price-related functions.
     export const SOL_Emoji='sol'
     export const SAIL_Emoji='sail'
     export const gSAIL_Emoji='gsail'
+    
+    export const GUILD_ID=<YOUR_DISCORD_SERVER_ID>
+    export const LOG_CHANNEL_ID=<YOUR_DEDICATED_CHANNEL_ON_YOUR_DISCORD_SERVER>
   ```
 7. Open the cmd and type `node index.js`
 
