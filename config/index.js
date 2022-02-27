@@ -35,8 +35,8 @@ export const GUILD_ID='847485334157656107'
 export const LOG_CHANNEL_ID='847485334157656113'
 
 export const TRANSACTION_EXPLORERS = {
-  SOLSCAN:  'https://solscan.io/tx/%s',
-  SOLANA:   'https://explorer.solana.com/tx/%s' + ACTIVE_CLUSTER !== CLUSTERS.MAINNET ? `?cluster=${ACTIVE_CLUSTER}` : '',
+  SOLSCAN:  'https://solscan.io/tx/%s' + (( ACTIVE_CLUSTER !== CLUSTERS.MAINNET ) ? `?cluster=${ACTIVE_CLUSTER}` : ''),
+  SOLANA:   'https://explorer.solana.com/tx/%s' + (( ACTIVE_CLUSTER !== CLUSTERS.MAINNET ) ? `?cluster=${ACTIVE_CLUSTER}` : ''),
 };
 
 export const EXPECTED_ROLES=[

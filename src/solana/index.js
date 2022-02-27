@@ -146,7 +146,7 @@ const getSAILBalance = async (privateKey) => {
 
   return {
     isExistToken: true,
-    amount: account.amount / 1000000
+    amount: account.amount / 1000000000
   };
 }
 
