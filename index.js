@@ -52,8 +52,6 @@ client.on('disconnected', function () {
 
 client.on('messageCreate', async (message) => {
 
-  console.log(`Message: ${message}`);
-
   // Ignore the message if the prefix does not fit and if the client authored it.
   if (!message.content.startsWith(COMMAND_PREFIX) || message.author.bot) return;
 
@@ -61,15 +59,10 @@ client.on('messageCreate', async (message) => {
 
   let args = tmpMsg[0].slice(COMMAND_PREFIX.length).trim().split(/ +/);
 
-  console.log(`Args: ${args}`);
-
   let command = args[0];
   args = args.slice(1);
 
   let desc = tmpMsg[1] ?? TRANSACTION_DESC;
-
-  console.log(`Description: ${desc}`);
-  console.log(`Command: ${command}`);
 
   if (command == "register-wallet") { // Register wallet
     if (message.channel.type != "DM") {
