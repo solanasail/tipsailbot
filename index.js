@@ -743,8 +743,6 @@ client.on('messageCreate', async (message) => {
         return;
       }
 
-      boardInfo.users.push(user)
-
       const transfer = ( label == 'SAIL')  ? solanaConnect.transferSAIL  :
                        ( label == 'gSAIL') ? solanaConnect.transferGSAIL :
                        ( label == 'SOL')   ? solanaConnect.transferSOL   : null, // in case rainsol is ever added ;D
@@ -752,15 +750,31 @@ client.on('messageCreate', async (message) => {
                                                        await Wallet.getPublicKey(user.id),
                                                        amount / maxPeople, `Rain ${label}` )
 
+      let fetchedUser = await client.users.fetch(user.id, false);
+      
       if( !success ) {
         console.log(`Error while raining ${label}`, error)
+
+        try {
+           await fetchedUser.send({
+            embeds: [new MessageEmbed()
+              .setColor(errorColor)
+              .setTitle(`Rain ${label} Error`)
+              .setDescription(error)
+            ]
+          });
+        } catch (error) {
+          console.log(`Cannot send messages to this user`);
+        }        
+        
         return;
       }
 
+      boardInfo.users.push(user)
+      
       const msg = `You received ${amount / maxPeople} ${label}\nTransaction: ${ solanaConnect.txLink(signature) }`
       try {
         // DM to recipient
-        let fetchedUser = await client.users.fetch(user.id, false);
         await fetchedUser.send({
           embeds: [new MessageEmbed()
             .setColor(infoColor)
