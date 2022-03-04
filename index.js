@@ -758,7 +758,7 @@ client.on('messageCreate', async (message) => {
         try {
            await fetchedUser.send({
             embeds: [new MessageEmbed()
-              .setColor(errorColor)
+              .setColor(dangerColor)
               .setTitle(`Rain ${label} Error`)
               .setDescription(error)
             ]
