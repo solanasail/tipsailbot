@@ -27,8 +27,10 @@ const client = new Client({
 });
 let guild = undefined;
 
-let dangerColor = '#d93f71';
-let infoColor = '#0099ff';
+const dangerColor = '#d93f71';
+const infoColor = '#0099ff';
+
+const BOT_COMMANDS = ['helptip', 'balance', 'import-wallet', 'register-wallet', 'tipsol', 'tipsail', 'tipgsail', 'rainsail', 'raingsail'];
 
 try {
   // connect to database.
@@ -63,6 +65,11 @@ client.on('messageCreate', async (message) => {
   args = args.slice(1);
 
   let desc = tmpMsg[1] ?? TRANSACTION_DESC;
+
+  // Ignore the message if the command is not in the list of registered commands
+  if (BOT_COMMANDS.findIndex((elem) => elem === command) == -1) {
+    return;
+  }  
 
   if (command == "register-wallet") { // Register wallet
     if (message.channel.type != "DM") {
@@ -737,11 +744,12 @@ client.on('messageCreate', async (message) => {
     const filter = (reaction, user) => !user.bot && user.id != boardInfo.investor && ["✅"].includes(reaction.emoji.name);
     boardInfo.collector = boardInfo.uiMain.createReactionCollector({ filter });
 
-
     boardInfo.collector.on('collect', async (reaction, user) => {
       if (boardInfo.users.findIndex((elem) => elem.id == user.id) != -1 || boardInfo.limit <= boardInfo.users.length) {
         return;
       }
+
+      boardInfo.users.push(user); // Prevent the user from getting this rain again, We're assuming that transaction will succeed
 
       const transfer = ( label == 'SAIL')  ? solanaConnect.transferSAIL  :
                        ( label == 'gSAIL') ? solanaConnect.transferGSAIL :
@@ -751,9 +759,13 @@ client.on('messageCreate', async (message) => {
                                                        amount / maxPeople, `Rain ${label}` )
 
       let fetchedUser = await client.users.fetch(user.id, false);
-      
+
       if( !success ) {
         console.log(`Error while raining ${label}`, error)
+        
+        let userIndex = boardInfo.users.findIndex((elem) => elem === user);
+        console.assert(userIndex >= 0, 'User not in the list');
+        boardInfo.users.splice(userIndex, 1); // Transaction failed, let's allow the user to try again
 
         try {
            await fetchedUser.send({
@@ -770,8 +782,6 @@ client.on('messageCreate', async (message) => {
         return;
       }
 
-      boardInfo.users.push(user)
-      
       const msg = `You received ${amount / maxPeople} ${label}\nTransaction: ${ solanaConnect.txLink(signature) }`
       try {
         // DM to recipient
