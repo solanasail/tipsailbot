@@ -37,7 +37,7 @@ try {
   await DB.connectDB(ACTIVE_CLUSTER);
   console.log("Connected to MongoDB");
 } catch (error) {
-  console.log("Cannot be able to connect to DB");
+  console.log(`Cannot be able to connect to DB.\n${error}\nstack: ${error.stack}`);
   process.exit(1); // exit node.js with an error
 }
 
@@ -78,7 +78,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`This must be done in a private DM channel`)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -104,7 +104,7 @@ client.on('messageCreate', async (message) => {
         .setColor(infoColor)
         .setDescription(`Address: ${account.publicKey}\n\nPrivate Key:\n${await Utils.Uint8Array2String(account.privateKey)}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]
     }).catch(error => {
-      console.log(`Cannot send messages to this user`);
+      console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
     });
     return;
   } else if (command == "import-wallet") { // Import wallet
@@ -114,7 +114,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`This must be done in a private DM channel`)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -126,7 +126,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`You don't have any permission`)]
       }).catch(error => {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -137,7 +137,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`Please input the private key`)]
       }).catch(error => {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -150,7 +150,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`Invalid private key`)]
       }).catch(error => {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -173,7 +173,7 @@ client.on('messageCreate', async (message) => {
         .setColor(infoColor)
         .setDescription(`Address: ${account.publicKey}\n\nPrivate Key:\n${await Utils.Uint8Array2String(account.privateKey)}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]
     }).catch(error => {
-      console.log(`Cannot send messages to this user`);
+      console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
     });
     return;
   } else if (command == "helptip") { // Display help
@@ -190,7 +190,7 @@ client.on('messageCreate', async (message) => {
           (await Utils.checkRoleInPublic(message) ? `${COMMAND_PREFIX}import-wallet <PK>\n` : ``) +
           `${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount> -m <description>\n${COMMAND_PREFIX}tipsail <user> <amount> -m <description>\n${COMMAND_PREFIX}tipgsail <user> <amount> -m <description>\n\n${COMMAND_PREFIX}raingsail <amount> <max people>\n${COMMAND_PREFIX}rainsail <amount> <max people>`)]
     }).catch(error => {
-      console.log(`Cannot send messages to this user`);
+      console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
     });
     return;
   }
@@ -203,10 +203,10 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`You must register or import your wallet before making transfers\nThis must be done in a private DM channel`)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
     } catch (error) {
-      console.log(`${message.author.username}'s behavior was detected.`);
+      console.log(`${message.author.username}'s behavior was detected..\n${error}\nstack: ${error.stack}`);
     }
     return;
   }
@@ -232,7 +232,7 @@ client.on('messageCreate', async (message) => {
         .setColor(infoColor)
         .setDescription(`Active Cluster: ${ACTIVE_CLUSTER}\nAddress: ${publicKey}\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]
     }).catch(error => {
-      console.log(`Cannot send messages to this user`);
+      console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
     });
     return;
   } else if (command == "tipsol") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
@@ -247,7 +247,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(validation.msg)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -263,7 +263,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription('Not enough SOL')]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -274,7 +274,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription('MIN: 0.000001\nMAX: 5')]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -289,7 +289,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`<@!${elem}> doesn't have the wallet`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         continue;
       }
@@ -305,7 +305,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         return;
       }
@@ -327,7 +327,7 @@ client.on('messageCreate', async (message) => {
           .setTitle('Tip SOL')
           .setDescription(msgToSender)]
       }).catch(error => {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       });
 
       try {
@@ -340,7 +340,7 @@ client.on('messageCreate', async (message) => {
             .setDescription(msgToRecipient)]
         });
       } catch (error) {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       }
     }
 
@@ -349,7 +349,7 @@ client.on('messageCreate', async (message) => {
       const sol_emoji = tmpCache.find(emoji => emoji.name == SOL_Emoji);
       await message.react(sol_emoji);
     } catch (error) {
-      console.log(`Sol emoji error: ${error}`);
+      console.log(`Sol emoji error.\n${error}\nstack: ${error.stack}`);
     }
     return;
   } else if (command == "tipsail") {
@@ -364,7 +364,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(validation.msg)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -380,7 +380,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`Not enough SOL fee to tip the SAIL`)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -392,7 +392,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`Not enough SAIL`)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -403,7 +403,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription('MIN: 0.000001\nMAX: 1000')]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -418,7 +418,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`<@!${elem}> doesn't have the wallet`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         continue;
       }
@@ -434,7 +434,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         return;
       }
@@ -456,7 +456,7 @@ client.on('messageCreate', async (message) => {
           .setTitle('Tip SAIL')
           .setDescription(msgToSender)]
       }).catch(error => {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       });
 
       try {
@@ -469,7 +469,7 @@ client.on('messageCreate', async (message) => {
             .setDescription(msgToRecipient)]
         });
       } catch (error) {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       }
     }
 
@@ -478,7 +478,7 @@ client.on('messageCreate', async (message) => {
       const sail_emoji = tmpCache.find(emoji => emoji.name == SAIL_Emoji);
       await message.react(sail_emoji);
     } catch (error) {
-      console.log(`Sail emoji error: ${error}`);
+      console.log(`Sail emoji error.\n${error}\nstack: ${error.stack}`);
     }
     return;
   } else if (command == "tipgsail") {
@@ -493,7 +493,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(validation.msg)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -509,7 +509,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`Not enough SOL fee to tip the GSAIL`)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -522,7 +522,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`Not enough GSAIL`)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -533,7 +533,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription('MIN: 0.000000001\nMAX: 100')]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -548,7 +548,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`<@!${elem}> doesn't have the wallet`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         continue;
       }
@@ -564,7 +564,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         return;
       }
@@ -586,7 +586,7 @@ client.on('messageCreate', async (message) => {
           .setTitle('Tip gSAIL')
           .setDescription(msgToSender)]
       }).catch(error => {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       });
 
       try {
@@ -599,7 +599,7 @@ client.on('messageCreate', async (message) => {
             .setDescription(msgToRecipient)]
         });
       } catch (error) {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       }
     }
 
@@ -608,7 +608,7 @@ client.on('messageCreate', async (message) => {
       const gsail_emoji = tmpCache.find(emoji => emoji.name == gSAIL_Emoji);
       await message.react(gsail_emoji);
     } catch (error) {
-      console.log(`gSail emoji error: ${error}`);
+      console.log(`gSail emoji error.\n${error}\nstack: ${error.stack}`);
     }
     return;
   } else if (command == "rainsail" || command == "raingsail") {
@@ -626,7 +626,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(validation.msg)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -647,7 +647,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`Not enough ${label}`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         return;
       }
@@ -658,7 +658,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`SAIL must be between 1 to 1000`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         return;
       }
@@ -672,7 +672,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`Not enough ${label}`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         return;
       }
@@ -683,7 +683,7 @@ client.on('messageCreate', async (message) => {
             .setColor(dangerColor)
             .setDescription(`gSAIL must be between 1 to 100`)]
         }).catch(error => {
-          console.log(`Cannot send messages`);
+          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
         });
         return;
       }
@@ -696,7 +696,7 @@ client.on('messageCreate', async (message) => {
           .setColor(dangerColor)
           .setDescription(`Max people must be between 1 to 40`)]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
       return;
     }
@@ -715,27 +715,27 @@ client.on('messageCreate', async (message) => {
       embeds: [new MessageEmbed()
         .setTitle(`Rain ${label}`)
         .setColor(infoColor)
-        .addFields(
-          { name: `Prize`, value: `${amount} ${label}`, inline: true },
-          { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
-        )
-        .setDescription(`Do you like it?`)]
+        .setDescription(`Do you like it?\n\n**Prize:** ${amount} ${label} **People:** ${boardInfo.users.length} / ${maxPeople}`)
+      ]
     }).catch(error => {
-      console.log(`Cannot send messages`);
+      console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
     });
     await boardInfo.uiMain.react("✅");
 
     if( message.channel.id !=  LOG_CHANNEL_ID ) {
       boardInfo.uiLog = await guild.channels.cache.get(LOG_CHANNEL_ID).send({
         embeds: [new MessageEmbed()
-          .setTitle(`Rain ${label}`)
           .setColor(infoColor)
+          .setDescription(`**Rain ${label} from ${message.author}**`)
+          .setAuthor({ name: 'TipBot', url: boardInfo.uiMain.url })
           .addFields(
             { name: `Prize`, value: `${amount} ${label}`, inline: true },
             { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
-          ) ]
+          )
+          .setTimestamp()
+        ]
       }).catch(error => {
-        console.log(`Cannot send messages`);
+        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
       });
     } else {
       boardInfo.uiLog = boardInfo.uiMain
@@ -761,7 +761,7 @@ client.on('messageCreate', async (message) => {
       let fetchedUser = await client.users.fetch(user.id, false);
 
       if( !success ) {
-        console.log(`Error while raining ${label}`, error)
+        console.log(`Error while raining ${label}!.\n${error}\nstack: ${error.stack}`)
         
         let userIndex = boardInfo.users.findIndex((elem) => elem === user);
         console.assert(userIndex >= 0, 'User not in the list');
@@ -772,17 +772,17 @@ client.on('messageCreate', async (message) => {
             embeds: [new MessageEmbed()
               .setColor(dangerColor)
               .setTitle(`Rain ${label} Error`)
-              .setDescription(error)
+              .setDescription(String(error))
             ]
           });
         } catch (error) {
-          console.log(`Cannot send messages to this user`);
+          console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
         }        
         
         return;
       }
 
-      const msg = `You received ${amount / maxPeople} ${label}\nTransaction: ${ solanaConnect.txLink(signature) }`
+      const msg = `You received ${amount / maxPeople} ${label} from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }`
       try {
         // DM to recipient
         await fetchedUser.send({
@@ -793,7 +793,7 @@ client.on('messageCreate', async (message) => {
           ]
         });
       } catch (error) {
-        console.log(`Cannot send messages to this user`);
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       }
 
       let userList = ''
@@ -807,23 +807,22 @@ client.on('messageCreate', async (message) => {
           embeds: [new MessageEmbed()
             .setTitle(`Rain ${label}`)
             .setColor(infoColor)
-            .addFields(
-              { name: `Prize`, value: `${amount} ${label}`, inline: true },
-              { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
-            )
+            .setDescription(`**Prize:** ${amount} ${label} **People:** ${boardInfo.users.length} / ${maxPeople}`)
           ]
         })
       }
 
       boardInfo.uiLog.edit({
         embeds: [new MessageEmbed()
-          .setTitle(`Rain ${label}`)
           .setColor(infoColor)
+          .setAuthor({ name: 'TipBot', url: boardInfo.uiMain.url })
+          .setDescription(`**Rain ${label} from ${message.author}**`)
           .addFields(
+            { name: `Receivers`, value: userList },
             { name: `Prize`, value: `${amount} ${label}`, inline: true },
             { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
           )
-          .setDescription(userList)
+          .setTimestamp()
         ]
       })
     })
@@ -834,6 +833,6 @@ try {
   // Login to Discord with your client's token
   client.login(DISCORD_TOKEN);
 } catch (e) {
-  console.error('Client has failed to connect to discord.');
+  console.error(`Client has failed to connect to discord..\n${e}\nstack: ${e.stack}`);
   process.exit(1);
 }
