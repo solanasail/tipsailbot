@@ -29,7 +29,7 @@ const createWallet = async (id) => {
       publicKey: wallet.publicKey.toString()
     });
   } catch (error) {
-    console.log("Cannot save the user to database");
+    console.log(`Cannot save the user to database.\n ${error}\nstack: ${error.stack}`);
   }
 
   return {
@@ -60,7 +60,7 @@ const importWallet = async (id, keyArr) => {
       publicKey: wallet.publicKey.toString()
     });
   } catch (error) {
-    console.log("Cannot save the user to database");
+    console.log(`Cannot save the user to database.\n ${error}\nstack: ${error.stack}`);
   }
 
   return {
@@ -81,6 +81,7 @@ const getSolBalance = async (publicKey) => {
       amount: amount,
     };
   } catch (error) {
+    console.log(`Cannot get SOL balance.\n ${error}\nstack: ${error.stack}`);
     return {
       status: false,
       amount: 0
@@ -107,6 +108,7 @@ const getGSAILBalance = async (privateKey) => {
       wallet.publicKey
     )
   } catch (error) {
+    console.log(`Cannot get gSAIL balance.\n ${error}\nstack: ${error.stack}`);
     return {
       isExistToken: false,
       amount: 0
@@ -138,6 +140,7 @@ const getSAILBalance = async (privateKey) => {
       wallet.publicKey
     )
   } catch (error) {
+    console.log(`Cannot get SAIL balance.\n ${error}\nstack: ${error.stack}`);
     return {
       isExistToken: false,
       amount: 0
@@ -178,7 +181,7 @@ const transferSOL = async (fromPrivateKey, toPubKey, sol, desc) => {
 
     console.log(signature);
   } catch (error) {
-    console.log(`error: ${error}\nstack: ${error.stack}`);
+    console.log(`Error transfering SOL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -204,7 +207,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       fromWallet.publicKey
     )
   } catch (error) {
-    console.log(`error: ${error}\nstack: ${error.stack}`);
+    console.log(`Error transfering SAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -214,7 +217,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       new web3.PublicKey(toPubKey),
     );
   } catch (error) {
-    console.log(`error: ${error}\nstack: ${error.stack}`);
+    console.log(`Error transfering SAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -243,7 +246,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
 
     console.log(signature);
   } catch (error) {
-    console.log(`error: ${error}\nstack: ${error.stack}`);
+    console.log(`Error transfering SAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -269,7 +272,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       fromWallet.publicKey
     )
   } catch (error) {
-    console.log(`error: ${error}\nstack: ${error.stack}`);
+    console.log(`Error transfering gSAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -279,7 +282,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       new web3.PublicKey(toPubKey),
     );
   } catch (error) {
-    console.log(`error: ${error}\nstack: ${error.stack}`);
+    console.log(`Error transfering gSAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
@@ -307,7 +310,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     );
     console.log(signature);
   } catch (error) {
-    console.log(`error: ${error}\nstack: ${error.stack}`);
+    console.log(`Error transfering gSAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
