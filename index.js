@@ -20,6 +20,12 @@ import Utils from './src/utils.js'
 
 import DB from './src/publicKeyStorage/index.js'
 
+function _removeItem( array, item ) {
+  const idx = array.findIndex( elem => elem === item )
+  console.assert( idx >= 0, 'Item not in the array' )
+  array.splice( idx, 1) 
+}
+
 // Create a new discord client instance
 const client = new Client({
   intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES", 'GUILD_MESSAGE_REACTIONS'],
@@ -69,7 +75,7 @@ client.on('messageCreate', async (message) => {
   // Ignore the message if the command is not in the list of registered commands
   if (BOT_COMMANDS.findIndex((elem) => elem === command) == -1) {
     return;
-  }  
+  }
 
   if (command == "register-wallet") { // Register wallet
     if (message.channel.type != "DM") {
@@ -701,6 +707,10 @@ client.on('messageCreate', async (message) => {
       return;
     }
 
+    const transfer = ( label == 'SAIL')  ? solanaConnect.transferSAIL  :
+                     ( label == 'gSAIL') ? solanaConnect.transferGSAIL :
+                     ( label == 'SOL')   ? solanaConnect.transferSOL   : null; // in case rainsol is ever added ;D
+
     const boardInfo = {
       collector: null,
       investor: message.author.id,
@@ -748,58 +758,61 @@ client.on('messageCreate', async (message) => {
       if (boardInfo.users.findIndex((elem) => elem.id == user.id) != -1 || boardInfo.limit <= boardInfo.users.length) {
         return;
       }
-
       boardInfo.users.push(user); // Prevent the user from getting this rain again, We're assuming that transaction will succeed
 
-      const transfer = ( label == 'SAIL')  ? solanaConnect.transferSAIL  :
-                       ( label == 'gSAIL') ? solanaConnect.transferGSAIL :
-                       ( label == 'SOL')   ? solanaConnect.transferSOL   : null, // in case rainsol is ever added ;D
-        {success, error, signature,} = await transfer( await Wallet.getPrivateKey(boardInfo.investor),
-                                                       await Wallet.getPublicKey(user.id),
-                                                       amount / maxPeople, `Rain ${label}` )
+      const from = await Wallet.getPrivateKey(boardInfo.investor),
+            to = await Wallet.getPublicKey(user.id)
+      console.assert( from, `investor's wallet not found` )
 
       let fetchedUser = await client.users.fetch(user.id, false);
+      if( !to ) {
+         await fetchedUser.send({
+           embeds: [new MessageEmbed()
+            .setColor(dangerColor)
+            .setTitle(`Rain ${label} Error`)
+            .setDescription(`You need to use \`${COMMAND_PREFIX}register-wallet\` or \`${COMMAND_PREFIX}import-wallet\` first. Try \`${COMMAND_PREFIX}helptip\` if you need help`)
+          ]
+        }).catch(error => {
+          console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+        })
+        _removeItem( boardInfo.users, user ) // Transaction didn't occur, let's allow trying again after they register a wallet
+        return;
+      }
 
+      let {success, error, signature,} = await transfer( from, to,
+                                                            amount / maxPeople, `Rain ${label}` )
       if( !success ) {
         console.log(`Error while raining ${label}!.\n${error}\nstack: ${error.stack}`)
-        
-        let userIndex = boardInfo.users.findIndex((elem) => elem === user);
-        console.assert(userIndex >= 0, 'User not in the list');
-        boardInfo.users.splice(userIndex, 1); // Transaction failed, let's allow the user to try again
+        _removeItem( boardInfo.users, user ) // Transaction failed, let's allow the user to try again
 
-        try {
-           await fetchedUser.send({
-            embeds: [new MessageEmbed()
-              .setColor(dangerColor)
-              .setTitle(`Rain ${label} Error`)
-              .setDescription(String(error))
-            ]
-          });
-        } catch (error) {
+        await fetchedUser.send({
+          embeds: [new MessageEmbed()
+            .setColor(dangerColor)
+            .setTitle(`Rain ${label} Error`)
+            .setDescription(String(error))
+          ]
+        }).catch(error => {
           console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-        }        
-        
+        })
+
         return;
       }
 
       const msg = `You received ${amount / maxPeople} ${label} from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }`
-      try {
-        // DM to recipient
-        await fetchedUser.send({
-          embeds: [new MessageEmbed()
-            .setColor(infoColor)
-            .setTitle(`Rain ${label}`)
-            .setDescription(msg)
-          ]
-        });
-      } catch (error) {
+      await fetchedUser.send({ // DM to recipient
+        embeds: [new MessageEmbed()
+          .setColor(infoColor)
+          .setTitle(`Rain ${label}`)
+          .setDescription(msg)
+        ]
+      }).catch(error => {
         console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      }
+      })
 
       let userList = ''
       for (let i = 0; i < boardInfo.users.length; i++) {
         const user = boardInfo.users[i];
-        userList += user.username + ` received ${amount / maxPeople} ${label}` + '\n'
+        userList += user.username + '\n'        
       }
 
       if( boardInfo.uiMain != boardInfo.uiLog ) {
@@ -809,6 +822,8 @@ client.on('messageCreate', async (message) => {
             .setColor(infoColor)
             .setDescription(`**Prize:** ${amount} ${label} **People:** ${boardInfo.users.length} / ${maxPeople}`)
           ]
+        }).catch(error => {
+          console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
         })
       }
 
@@ -818,12 +833,15 @@ client.on('messageCreate', async (message) => {
           .setAuthor({ name: 'TipBot', url: boardInfo.uiMain.url })
           .setDescription(`**Rain ${label} from ${message.author}**`)
           .addFields(
-            { name: `Receivers`, value: userList },
+            { name: `Receivers`, value: userList.slice(-1024) }, // Removes the excess chars. Discord allows max 1024 per field
             { name: `Prize`, value: `${amount} ${label}`, inline: true },
-            { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
+            { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },            
+            { name: `Each`, value: `${amount / maxPeople} ${label}`, inline: true },
           )
           .setTimestamp()
         ]
+      }).catch(error => {
+        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
       })
     })
   }
