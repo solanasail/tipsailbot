@@ -4,8 +4,7 @@ import SessionStorageService from '../wallet/SessionStorageService.js';
 import {
   ACTIVE_CLUSTER,
   TRANSACTION_EXPLORERS,
-  gSAIL_TOKEN_ADDRESS,
-  SAIL_TOKEN_ADDRESS,
+  TOKEN_LIST,
 } from '../../config/index.js'
 import DB from '../publicKeyStorage/index.js'
 
@@ -28,7 +27,7 @@ const createWallet = async (id) => {
       discordId: id,
       publicKey: wallet.publicKey.toString()
     });
-  } catch (error) {
+  } catch( error ) {
     console.log(`Cannot save the user to database.\n ${error}\nstack: ${error.stack}`);
   }
 
@@ -43,23 +42,23 @@ const importWallet = async (id, keyArr) => {
   let wallet;
   try {
     wallet = web3.Keypair.fromSecretKey(new Uint8Array(keyArr));
-  } catch (error) {
+  } catch( error ) {
     return {
       status: false,
     };
   }
 
-  await Promise.all([
+  await Promise.all( [
     SessionStorageService.setKeyPair(id, wallet.secretKey, wallet.publicKey.toString()),
     SessionStorageService.setCluster(id, ACTIVE_CLUSTER),
   ]);
 
   try {
-    await DB.saveUser({
+    await DB.saveUser( {
       discordId: id,
       publicKey: wallet.publicKey.toString()
     });
-  } catch (error) {
+  } catch( error ) {
     console.log(`Cannot save the user to database.\n ${error}\nstack: ${error.stack}`);
   }
 
@@ -95,7 +94,8 @@ const getGSAILBalance = async (privateKey) => {
 
   let token = await new splToken.Token(
     connection,
-    new web3.PublicKey(gSAIL_TOKEN_ADDRESS),
+    // new web3.PublicKey(gSAIL_TOKEN_ADDRESS),
+    new web3.PublicKey( TOKEN_LIST['$gSAIL'].address[ACTIVE_CLUSTER] ),
     splToken.TOKEN_PROGRAM_ID,
     wallet
   );
@@ -107,7 +107,7 @@ const getGSAILBalance = async (privateKey) => {
     account = await token.getOrCreateAssociatedAccountInfo(
       wallet.publicKey
     )
-  } catch (error) {
+  } catch( error ) {
     console.log(`Cannot get gSAIL balance.\n ${error}\nstack: ${error.stack}`);
     return {
       isExistToken: false,
@@ -117,7 +117,8 @@ const getGSAILBalance = async (privateKey) => {
 
   return {
     isExistToken: true,
-    amount: account.amount / 1000000000
+    // amount: account.amount / 1000000000
+    amount: account.amount / Math.pow( 10, TOKEN_LIST['$gSAIL'].decimals )
   };
 }
 
@@ -127,7 +128,8 @@ const getSAILBalance = async (privateKey) => {
 
   let token = await new splToken.Token(
     connection,
-    new web3.PublicKey(SAIL_TOKEN_ADDRESS),
+    // new web3.PublicKey(SAIL_TOKEN_ADDRESS),
+    new web3.PublicKey( TOKEN_LIST['$SAIL'].address[ACTIVE_CLUSTER] ),
     splToken.TOKEN_PROGRAM_ID,
     wallet
   );
@@ -139,7 +141,7 @@ const getSAILBalance = async (privateKey) => {
     account = await token.getOrCreateAssociatedAccountInfo(
       wallet.publicKey
     )
-  } catch (error) {
+  } catch( error ) {
     console.log(`Cannot get SAIL balance.\n ${error}\nstack: ${error.stack}`);
     return {
       isExistToken: false,
@@ -149,7 +151,8 @@ const getSAILBalance = async (privateKey) => {
 
   return {
     isExistToken: true,
-    amount: account.amount / 1000000
+    // amount: account.amount / 1000000
+    amount: account.amount / Math.pow( 10, TOKEN_LIST['$SAIL'].decimals )
   };
 }
 
@@ -180,7 +183,7 @@ const transferSOL = async (fromPrivateKey, toPubKey, sol, desc) => {
     );
 
     console.log(signature);
-  } catch (error) {
+  } catch( error ) {
     console.log(`Error transfering SOL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
@@ -195,7 +198,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
 
   let token = await new splToken.Token(
     connection,
-    new web3.PublicKey(SAIL_TOKEN_ADDRESS),
+    new web3.PublicKey( TOKEN_LIST['$SAIL'].address[ACTIVE_CLUSTER] ),
     splToken.TOKEN_PROGRAM_ID,
     fromWallet
   );
@@ -206,7 +209,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     fromTokenAccount = await token.getOrCreateAssociatedAccountInfo(
       fromWallet.publicKey
     )
-  } catch (error) {
+  } catch( error ) {
     console.log(`Error transfering SAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
@@ -216,7 +219,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     toTokenAccount = await token.getOrCreateAssociatedAccountInfo(
       new web3.PublicKey(toPubKey),
     );
-  } catch (error) {
+  } catch( error ) {
     console.log(`Error transfering SAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
@@ -229,7 +232,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
         toTokenAccount.address,
         fromWallet.publicKey,
         [],
-        amount * 1000000, // This is transferring 1 token, not 1000000 tokens
+        amount * Math.pow( 10, TOKEN_LIST['$SAIL'].decimals )
       ),
     ).add(new web3.TransactionInstruction({
       keys: [],
@@ -245,7 +248,7 @@ const transferSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     );
 
     console.log(signature);
-  } catch (error) {
+  } catch( error ) {
     console.log(`Error transfering SAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
@@ -260,7 +263,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
 
   let token = await new splToken.Token(
     connection,
-    new web3.PublicKey(gSAIL_TOKEN_ADDRESS),
+    new web3.PublicKey( TOKEN_LIST['$gSAIL'].address[ACTIVE_CLUSTER] ),
     splToken.TOKEN_PROGRAM_ID,
     fromWallet
   );
@@ -271,7 +274,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     fromTokenAccount = await token.getOrCreateAssociatedAccountInfo(
       fromWallet.publicKey
     )
-  } catch (error) {
+  } catch( error ) {
     console.log(`Error transfering gSAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
@@ -281,20 +284,20 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
     toTokenAccount = await token.getOrCreateAssociatedAccountInfo(
       new web3.PublicKey(toPubKey),
     );
-  } catch (error) {
+  } catch( error ) {
     console.log(`Error transfering gSAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }
 
   try {
-    var transaction = new web3.Transaction().add(
+    const transaction = new web3.Transaction().add(
       splToken.Token.createTransferInstruction(
         splToken.TOKEN_PROGRAM_ID,
         fromTokenAccount.address,
         toTokenAccount.address,
         fromWallet.publicKey,
         [],
-        amount * 1000000000, // This is transferring 1 token, not 1000000000 tokens
+        amount * Math.pow( 10, TOKEN_LIST['$gSAIL'].decimals ),
       ),
     ).add(new web3.TransactionInstruction({
       keys: [],
@@ -309,7 +312,7 @@ const transferGSAIL = async (fromPrivateKey, toPubKey, amount, desc) => {
       {commitment: 'confirmed'},
     );
     console.log(signature);
-  } catch (error) {
+  } catch( error ) {
     console.log(`Error transfering gSAIL: ${error}\nstack: ${error.stack}`);
     return {success: false, error};
   }

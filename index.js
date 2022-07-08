@@ -2,95 +2,131 @@ import solanaConnect from './src/solana/index.js'
 import Wallet from './src/wallet/index.js'
 import PriceService from './src/price/PriceService.js'
 
-import { Client, MessageEmbed, MessageReaction, User } from 'discord.js'
+import { Client, MessageEmbed, } from 'discord.js'
 
 import {
   ACTIVE_CLUSTER,
-  COMMAND_PREFIX,
-  DISCORD_TOKEN,
   SOL_FEE_LIMIT,
-  SAIL_Emoji,
-  gSAIL_Emoji,
-  SOL_Emoji,
-  TRANSACTION_DESC,
+  TOKEN_RAIN_LIMITS, TOKEN_TIP_LIMITS,
+  TOKEN_LIST,
+  TOKENS_REQUIRED,
+
+  COMMAND_PREFIX,
   GUILD_ID,
+  DISCORD_TOKEN,
   LOG_CHANNEL_ID,
+  HELP_MSG,
+
+  SAIL_Emoji, gSAIL_Emoji, SOL_Emoji,
+  TRANSACTION_DESC,
 } from './config/index.js'
+
 import Utils from './src/utils.js'
+import { discord, removeItem, AUTOHIDE, secondsToHMS, } from './src/utils.js'
 
 import DB from './src/publicKeyStorage/index.js'
-
-function _removeItem( array, item ) {
-  const idx = array.findIndex( elem => elem === item )
-  console.assert( idx >= 0, 'Item not in the array' )
-  array.splice( idx, 1) 
-}
 
 // Create a new discord client instance
 const client = new Client({
   intents: ["GUILDS", "GUILD_MESSAGES", "DIRECT_MESSAGES", 'GUILD_MESSAGE_REACTIONS'],
   partials: ["CHANNEL"]
 });
+
 let guild = undefined;
 
-const dangerColor = '#d93f71';
-const infoColor = '#0099ff';
-
-const BOT_COMMANDS = ['helptip', 'balance', 'import-wallet', 'register-wallet', 'tipsol', 'tipsail', 'tipgsail', 'rainsail', 'raingsail'];
+const BOT_COMMANDS = ['helptip', 'balance', 'import-wallet', 'register-wallet', 'info',
+                      'tipsol', 'tipsail', 'tipgsail', 'rainsail', 'raingsail',
+                      'h', 'iw', 'rw', 'b', 'ts', 'tg', 'rs', 'rg'];
 
 try {
   // connect to database.
   await DB.connectDB(ACTIVE_CLUSTER);
   console.log("Connected to MongoDB");
-} catch (error) {
-  console.log(`Cannot be able to connect to DB.\n${error}\nstack: ${error.stack}`);
+} catch( error ) {
+  console.log(`Can't connect to the DB.\n${error}\nstack: ${error.stack}`);
   process.exit(1); // exit node.js with an error
 }
 
-// When the client is ready, run this code
-client.once('ready', async () => {
-  guild = await client.guilds.fetch(GUILD_ID);
-  console.log(`Logged in as ${client.user.tag}!`);
+process.on( 'unhandledRejection', error => {
+	console.log(`Exception was not properly handled!!\n${error}\nstack: ${error.stack}`);
+  // process.exit(2); //exit node.js with an error
 });
 
-client.on('disconnected', function () {
+client.on( 'disconnected', _ => {
   console.log('Disconnected!');
   process.exit(1); //exit node.js with an error
 });
 
+// When the client is ready, run this code
+client.once('ready', async _ => {
+  guild = await client.guilds.fetch(GUILD_ID);
+  console.log(`Logged in as ${ client.user.tag }!`);
+});
+
 client.on('messageCreate', async (message) => {
 
-  // Ignore the message if the prefix does not fit and if the client authored it.
-  if (!message.content.startsWith(COMMAND_PREFIX) || message.author.bot) return;
+  // Ignore the message if doesn't contain the prefix or is a bot.
+  if( !message.content.startsWith(COMMAND_PREFIX) || message.author.bot ) return;
 
-  let tmpMsg = (message.content + ' ').split(' -m ');
+  let tmpMsg = (message.content + ' ').split(' -m '); // Split message if message parameter present
 
-  let args = tmpMsg[0].slice(COMMAND_PREFIX.length).trim().split(/ +/);
-
-  let command = args[0];
-  args = args.slice(1);
-
+  let cmdWithArgs = tmpMsg[0].slice(COMMAND_PREFIX.length).trim(); // Remove COMMAND_PREFIX and start and trailing spaces
   let desc = tmpMsg[1] ?? TRANSACTION_DESC;
 
+  let command = cmdWithArgs.split(/ +/, 1)[0].toLowerCase();
+  let args    = cmdWithArgs.slice(command.length).trim().split(/ +/);
+
+//  console.log(`\nUser: ${ message.author.username }\nMessage content: ${ message.content }\n`+
+//              `Comment: ${desc}\nContent without comment: ${ tmpMsg[0] }\n`+
+//              `Cmd With Args after some cleaning: ${cmdWithArgs}\nCommand: ${command}\nArgs: ${args}\n`);
+
   // Ignore the message if the command is not in the list of registered commands
-  if (BOT_COMMANDS.findIndex((elem) => elem === command) == -1) {
+  if( BOT_COMMANDS.findIndex( cmd => cmd === command) == -1 ) {
+    await discord.error( message.channel, {
+      description: `Command "${command}" not valid!\n\n`+
+                   `Valid commands: helptip, info, balance, import-wallet, register-wallet, tipsol, tipsail, tipgsail, rainsail, raingsail\n\n`+
+                   `Please type ?helptip or read about it on [❓│faq](${HELP_MSG})`,
+    });
+
+    if( message.channel.type != "DM" ) {
+      discord.deleteMessage( message, AUTOHIDE )
+    }
+
     return;
   }
 
-  if (command == "register-wallet") { // Register wallet
-    if (message.channel.type != "DM") {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`This must be done in a private DM channel`)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
+  if( command == "info" ) {
+    if( message.channel.type != "DM" ) {
+      discord.deleteMessage( message, AUTOHIDE )
+    }
+
+    let text = `** TipBot uptime:** ${ secondsToHMS(client.uptime) }\n\n` +
+               `** TipBot ready at:** ${ client.readyAt }\n\n` +
+               `** Active Cluster:** ${ACTIVE_CLUSTER}\n\n` +
+               `** TipBot supported tokens:**\n\n`
+
+    TOKEN_LIST.forEach( token => {
+      text = text + `name: ${token.name}\nSymbol: ${token.symbol}\nAddress: ${ token.address[ACTIVE_CLUSTER] }\n\n`
+    } )
+    // console.log(text)
+
+    discord.send( message.channel, {
+      title: `Useful info`,
+      description: text,
+      autoHide: AUTOHIDE,
+    });
+    return;
+
+  } else if( command == "register-wallet" || command == "rw" ) { // Register wallet
+
+    if( message.channel.type != "DM" ) {
+      await discord.error( message.channel, { description: `This must be done in a private DM channel` } )
+      discord.deleteMessage( message, AUTOHIDE )
       return;
     }
 
     // create new keypair.
-    let account = await solanaConnect.createWallet(message.author.id);
+    let account = await solanaConnect.createWallet( message.author.id );
 
     // get the balance of sol
     const sol = await solanaConnect.getSolBalance(account.publicKey);
@@ -102,62 +138,36 @@ client.on('messageCreate', async (message) => {
     const SAIL = await solanaConnect.getSAILBalance(account.privateKey);
 
     // convert the balance to dolar
-    const dollarValue = parseFloat(await PriceService.getDollarValueForSol(sol.amount)) + parseFloat(await PriceService.getDollarValueForGSail(gSAIL.amount)) + parseFloat(await PriceService.getDollarValueForSail(SAIL.amount));
+    const dollarValue = parseFloat( await PriceService.getDollarValueForSol(sol.amount)) + parseFloat(await PriceService.getDollarValueForGSail(gSAIL.amount)) + parseFloat(await PriceService.getDollarValueForSail(SAIL.amount));
 
-    await message.author.send({
-      embeds: [new MessageEmbed()
-        .setTitle(`Active Cluster: ${ACTIVE_CLUSTER}`)
-        .setColor(infoColor)
-        .setDescription(`Address: ${account.publicKey}\n\nPrivate Key:\n${await Utils.Uint8Array2String(account.privateKey)}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]
-    }).catch(error => {
-      console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+    discord.send( message.author, {
+      title: `Active Cluster: ${ACTIVE_CLUSTER}`,
+      description: `Address: ${ account.publicKey }\n\nPrivate Key:\n${await Utils.Uint8Array2String(account.privateKey) }\n\n[${ account.privateKey }]\n\nSOL: ${ sol.amount }\ngSAIL: ${ gSAIL.amount }\nSAIL: ${ SAIL.amount }\n\nTotal: ${dollarValue}$`,
     });
     return;
-  } else if (command == "import-wallet") { // Import wallet
-    if (message.channel.type != "DM") {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`This must be done in a private DM channel`)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
+  } else if( command == "import-wallet" || command == 'iw' )  { // Import wallet
+
+    if( message.channel.type != "DM" ) {
+      await discord.error( message.channel, { description: `This must be done in a private DM channel`, });
+      discord.deleteMessage( message, AUTOHIDE )
       return;
     }
 
     // check the role in private channel
-    if (!await Utils.checkRoleInPrivate(guild, message)) {
-      await message.author.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`You don't have any permission`)]
-      }).catch(error => {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      });
+    if( !await Utils.checkRoleInPrivate(guild, message) ) {
+      discord.error( message.author, { description: `You don't have any permission` });
       return;
     }
 
-    if (!args[0]) {
-      await message.author.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`Please input the private key`)]
-      }).catch(error => {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      });
+    if( !args[0] ) {
+      discord.error( message.author, { description: `Please input the private key` });
       return;
     }
 
     // create new keypair.
-    let account = await solanaConnect.importWallet(message.author.id, await Utils.string2Uint8Array(args[0]));
-    if (!account.status) {
-      await message.author.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`Invalid private key`)]
-      }).catch(error => {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      });
+    let account = await solanaConnect.importWallet( message.author.id, await Utils.string2Uint8Array(args[0]));
+    if( !account.status) {
+      discord.error( message.author, { description: `Invalid private key`, });
       return;
     }
 
@@ -173,684 +183,479 @@ client.on('messageCreate', async (message) => {
     // convert the balance to dolar
     const dollarValue = parseFloat(await PriceService.getDollarValueForSol(sol.amount)) + parseFloat(await PriceService.getDollarValueForGSail(gSAIL.amount)) + parseFloat(await PriceService.getDollarValueForSail(SAIL.amount));
 
-    await message.author.send({
-      embeds: [new MessageEmbed()
-        .setTitle(`Active Cluster: ${ACTIVE_CLUSTER}`)
-        .setColor(infoColor)
-        .setDescription(`Address: ${account.publicKey}\n\nPrivate Key:\n${await Utils.Uint8Array2String(account.privateKey)}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]
-    }).catch(error => {
-      console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+    await discord.send( message.author, {
+      title: `Active Cluster: ${ACTIVE_CLUSTER}`,
+      description: `Address: ${account.publicKey}\n\nPrivate Key:\n${await Utils.Uint8Array2String(account.privateKey)}\n\n[${account.privateKey}]\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`,
     });
+
     return;
-  } else if (command == "helptip") { // Display help
-    if (message.channel.type == "DM") {
-      return;
+  } else if( command == "helptip" || command == "h") { // Display help
+
+    if( message.channel.type != "DM" ) {
+      discord.deleteMessage( message, AUTOHIDE )
     }
 
-    await message.author.send({
-      embeds: [new MessageEmbed()
-        .setColor(infoColor)
-        .setTitle('Help')
-        .setDescription(
-          `${COMMAND_PREFIX}register-wallet\n` +
-          (await Utils.checkRoleInPublic(message) ? `${COMMAND_PREFIX}import-wallet <PK>\n` : ``) +
-          `${COMMAND_PREFIX}balance\n${COMMAND_PREFIX}tipsol <user> <amount> -m <description>\n${COMMAND_PREFIX}tipsail <user> <amount> -m <description>\n${COMMAND_PREFIX}tipgsail <user> <amount> -m <description>\n\n${COMMAND_PREFIX}raingsail <amount> <max people>\n${COMMAND_PREFIX}rainsail <amount> <max people>`)]
-    }).catch(error => {
-      console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+    let title = `TiSailBot Help`;
+
+    /*
+               `\`\`\`diff\n+Text\n\`\`\`` // Green text
+               `\`\`\`diff\n-Text\n\`\`\`` // Red text
+               `\`\`\`fix\n+Text\n\`\`\``  // Yellow text
+               `[Some Text](https://discord.com/channels/xxx)` // Hyperlink
+
+    */
+    let text = `**Create/Import wallet:**\n` +
+               `\`${COMMAND_PREFIX}register-wallet\` *(alias: rw)*\n` +
+               `\`${COMMAND_PREFIX}import-wallet <PK>\` *(alias: iw)*\n\n` +
+               `**General commands:**\n` +
+               `\`${COMMAND_PREFIX}help\` *(alias: h) (This cmd!)*\n`+
+               `\`${COMMAND_PREFIX}info\`\n`+
+               `\`${COMMAND_PREFIX}balance\` *(alias: b)*\n\n`+
+               `**Tipping commands:**\n` +
+               `\`${COMMAND_PREFIX}tipsol <user> <amount> -m <description>\`\n`+
+               `\`${COMMAND_PREFIX}tipsail <user> <amount> -m <description>\` *(alias: ts)*\n`+
+               `\`${COMMAND_PREFIX}tipgsail <user> <amount> -m <description>\` *(alias: tg)*\n\n`+
+               `**Rain commands:**\n` +
+               `\`${COMMAND_PREFIX}raingsail <amount> <max people>\` *(alias: rg)*\n`+
+               `\`${COMMAND_PREFIX}rainsail <amount> <max people>\` *(alias: rs)*`;
+
+    await discord.send( message.author, {
+      title,
+      url: HELP_MSG,
+      description: text,
+      autoHide: AUTOHIDE.max,
     });
+
     return;
   }
 
-  if (!(await Wallet.getPrivateKey(message.author.id))) { // if you doesn't logged in
-    try {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setTitle(`${message.author.tag}`)
-          .setColor(dangerColor)
-          .setDescription(`You must register or import your wallet before making transfers\nThis must be done in a private DM channel`)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
+  if( command == "balance" || command == "b" ) { // See your current available and pending balance.
+    if( message.channel.type != "DM" ) {
+      discord.deleteMessage( message, AUTOHIDE )
+    }
+
+    const { success, publicKey, sol, gSAIL, SAIL, } = await getBalances( message.author, message.channel );
+
+    if( success ) {
+      // convert the balance to dolar
+      const dollarValue = parseFloat(await PriceService.getDollarValueForSol(sol.amount)) +
+                          parseFloat(await PriceService.getDollarValueForGSail(gSAIL.amount)) +
+                          parseFloat(await PriceService.getDollarValueForSail(SAIL.amount));
+
+      discord.send( message.author, {
+        author: message.author.tag,
+        description: `Active Cluster: ${ACTIVE_CLUSTER}\nAddress: ${publicKey}\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`,
       });
-    } catch (error) {
-      console.log(`${message.author.username}'s behavior was detected..\n${error}\nstack: ${error.stack}`);
     }
+
     return;
-  }
-
-  let publicKey = await Wallet.getPublicKey(message.author.id);
-
-  if (command == "balance") { // See your current available and pending balance.
-    // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(publicKey);
-
-    // get the balance of gSAIL
-    const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
-
-    // get the balance of SAIL
-    const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
-
-    // convert the balance to dolar
-    const dollarValue = parseFloat(await PriceService.getDollarValueForSol(sol.amount)) + parseFloat(await PriceService.getDollarValueForGSail(gSAIL.amount)) + parseFloat(await PriceService.getDollarValueForSail(SAIL.amount));
-
-    await message.author.send({
-      embeds: [new MessageEmbed()
-        .setAuthor(message.author.tag)
-        .setColor(infoColor)
-        .setDescription(`Active Cluster: ${ACTIVE_CLUSTER}\nAddress: ${publicKey}\n\nSOL: ${sol.amount}\ngSAIL: ${gSAIL.amount}\nSAIL: ${SAIL.amount}\n\nTotal: ${dollarValue}$`)]
-    }).catch(error => {
-      console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-    });
-    return;
-  } else if (command == "tipsol") { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
-    if (message.channel.type == "DM") {
+  } else if( command == "tipsol" ) { // $tip <user_mention> <amount>: Tip <amount> TLO to <user_mention>
+    if( message.channel.type == "DM" ) {
       return;
+    } else {
+      discord.deleteMessage( message, AUTOHIDE )
     }
 
     let validation = await Utils.validateForTipping(args, desc);
-    if (!validation.status) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(validation.msg)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
+    if( !validation.status ) {
+      await discord.error( message.channel, { description: validation.msg, });
       return;
     }
 
     let recipientIds = validation.ids;
     let amount = validation.amount.toFixed(6);
 
-    // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(publicKey);
-    if (sol.amount - amount * recipientIds.length < SOL_FEE_LIMIT * recipientIds.length) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription('Not enough SOL')]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-      return;
-    }
+    const { success, publicKey, sol, gSAIL, SAIL, } = await getBalances( message.author, message.channel);
 
-    if (amount < 0.000001 || 5 < amount) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription('MIN: 0.000001\nMAX: 5')]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-      return;
-    }
-
-    for (let i = 0; i < recipientIds.length; i++) {
-      const elem = recipientIds[i];
-
-      // if the recipient doesn't have the wallet
-      if (!await Wallet.getPublicKey(elem)) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`<@!${elem}> doesn't have the wallet`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
-        continue;
-      }
-
-      // get the balance of gSAIL
-      const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
-      // get the balance of SAIL
-      const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
-
-      if (gSAIL.amount < 1 || SAIL.amount < 1) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
+    if( success ) {
+      if( sol.amount - amount * recipientIds.length < SOL_FEE_LIMIT * recipientIds.length ) {
+        await discord.error( message.channel, { description: 'Not enough SOL', });
         return;
       }
 
-      const {success, error, signature,} = await solanaConnect.transferSOL(await Wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount, desc);
-
-      let msgToSender, msgToRecipient
-      if( success ) {
-        msgToSender    = `You sent ${amount} SOL to <@!${elem}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
-        msgToRecipient = `You received ${amount} SOL from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
-      } else {
-        msgToSender    = `Could not send SOL to <@!${elem}>\n\nError:\n${error}`
-        msgToRecipient = `Failed to receive SOL from <@!${message.author.id}>\n\nError:\n${error}`
+      if( amount < TOKEN_TIP_LIMITS.$SOL.min || TOKEN_TIP_LIMITS.$SOL.max < amount ) { // Check tipping limits
+        await discord.error( message.channel, { description: `Minimum amount: ${ TOKEN_TIP_LIMITS.$SOL.min }\nMaximum amount: ${ TOKEN_TIP_LIMITS.$SOL.max }`, });
+        return;
       }
-      // DM to sender
-      await message.author.send({
-        embeds: [new MessageEmbed()
-          .setColor(infoColor)
-          .setTitle('Tip SOL')
-          .setDescription(msgToSender)]
-      }).catch(error => {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      });
 
-      try {
+      for( const id of recipientIds ) {
+        if( !await Wallet.getPublicKey(id) ) { // if the recipient doesn't have wallet
+          await discord.error( message.channel, { description: `<@!${id}> doesn't have a Solana wallet`, });
+          continue;
+        }
+
+        if( gSAIL.amount < TOKENS_REQUIRED.$gSAIL || SAIL.amount < TOKENS_REQUIRED.$SAIL ) { // Check for minimun required tokens
+          await discord.error( message.channel, { description: `You should have at least ${ TOKENS_REQUIRED.$gSAIL } gSAIL and ${ TOKENS_REQUIRED.$SAIL } SAIL`, });
+          return;
+        }
+
+        const { success, error, signature, } = await solanaConnect.transferSOL(await Wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(id), amount, desc);
+
+        let msgToSender, msgToRecipient
+        if( success ) {
+          msgToSender    = `You sent ${amount} SOL to <@!${id}>` + ( desc ? `\n\nDescription:\n${desc}` : '')
+          msgToRecipient = `You received ${amount} SOL from <@!${ message.author.id }>` + ( desc ? `\n\nDescription:\n${desc}` : '')
+        } else {
+          msgToSender    = `Could not send SOL to <@!${id}>\n\nError:\n${error}`
+          msgToRecipient = `Failed to receive SOL from <@!${ message.author.id }>\n\nError:\n${error}`
+        }
+        // DM to sender
+        await discord.send( message.author, { title: 'Tip SOL (Tx here)', description: msgToSender, url: solanaConnect.txLink(signature),});
         // DM to recipient
-        let fetchedUser = await client.users.fetch(elem, false);
-        await fetchedUser.send({
-          embeds: [new MessageEmbed()
-            .setColor(infoColor)
-            .setTitle('Tip SOL')
-            .setDescription(msgToRecipient)]
-        });
-      } catch (error) {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+        let fetchedUser = await client.users.fetch(id, false);
+        await discord.send( fetchedUser, { title: 'Tip SOL (Tx here)', description: msgToRecipient, url: solanaConnect.txLink(signature),});
       }
     }
 
-    try {
-      let tmpCache = await message.guild.emojis.cache;
-      const sol_emoji = tmpCache.find(emoji => emoji.name == SOL_Emoji);
-      await message.react(sol_emoji);
-    } catch (error) {
-      console.log(`Sol emoji error.\n${error}\nstack: ${error.stack}`);
-    }
+    react( message, success, SOL_Emoji );
     return;
-  } else if (command == "tipsail") {
-    if (message.channel.type == "DM") {
+  } else if ( command == "tipsail" || command == "ts" ) {
+    if( message.channel.type == "DM" ) {
       return;
+    } else {
+      discord.deleteMessage( message, AUTOHIDE )
     }
 
     let validation = await Utils.validateForTipping(args, desc);
-    if (!validation.status) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(validation.msg)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
+    if( !validation.status ) {
+      await discord.error( message.channel, { description: validation.msg, });
       return;
     }
 
     let recipientIds = validation.ids;
     let amount = validation.amount.toFixed(6);
 
-    // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(publicKey);
-    if (sol.amount < SOL_FEE_LIMIT) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`Not enough SOL fee to tip the SAIL`)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-      return;
-    }
+    const { success, publicKey, sol, gSAIL, SAIL, } = await getBalances( message.author, message.channel);
 
-    const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
-    if (amount * recipientIds.length > SAIL.amount) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`Not enough SAIL`)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-      return;
-    }
-
-    if (amount < 0.000001 || 1000 < amount) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription('MIN: 0.000001\nMAX: 1000')]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-      return;
-    }
-
-    for (let i = 0; i < recipientIds.length; i++) {
-      const elem = recipientIds[i];
-
-      // if the recipient doesn't have the wallet
-      if (!await Wallet.getPublicKey(elem)) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`<@!${elem}> doesn't have the wallet`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
-        continue;
-      }
-
-      // get the balance of gSAIL
-      const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
-      // get the balance of SAIL
-      const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
-
-      if (gSAIL.amount < 1 || SAIL.amount < 1) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
+    if( success ) {
+      if ( sol.amount < SOL_FEE_LIMIT ) {
+        await discord.error( message.channel, { description: `Not enough SOL fee to tip the SAIL`, });
         return;
       }
 
-      const {success, error, signature,} = await solanaConnect.transferSAIL(await Wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount, desc);
-
-      let msgToSender, msgToRecipient
-      if( success ) {
-        msgToSender    = `You sent ${amount} SAIL to <@!${elem}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
-        msgToRecipient = `You received ${amount} SAIL from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
-      } else {
-        msgToSender    = `Could not send SAIL to <@!${elem}>\n\nError:\n${error}`
-        msgToRecipient = `Failed to receive SAIL from <@!${message.author.id}>\n\nError:\n${error}`
+      if ( amount * recipientIds.length > SAIL.amount ) {
+        await discord.error( message.channel, { description: `Not enough SAIL`, });
+        return;
       }
-      // DM to sender
-      await message.author.send({
-        embeds: [new MessageEmbed()
-          .setColor(infoColor)
-          .setTitle('Tip SAIL')
-          .setDescription(msgToSender)]
-      }).catch(error => {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      });
 
-      try {
+      if( amount < TOKEN_TIP_LIMITS.$SAIL.min || TOKEN_TIP_LIMITS.$SAIL.max < amount ) { // Check tipping limits
+        await discord.error( message.channel, { description: `Minimum amount: ${ TOKEN_TIP_LIMITS.$SAIL.min }\nMaximum amount: ${ TOKEN_TIP_LIMITS.$SAIL.max }`, });
+        return;
+      }
+
+      for( const id of recipientIds ) {
+        if( !await Wallet.getPublicKey(id) ) { // if the recipient doesn't have wallet
+          await discord.error( message.channel, { description: `<@!${id}> doesn't have the wallet`, });
+          continue;
+        }
+
+        // Update the balance of gSAIL
+        // gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
+        // Update the balance of SAIL
+        // SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
+
+        if( gSAIL.amount < TOKENS_REQUIRED.$gSAIL || SAIL.amount < TOKENS_REQUIRED.$SAIL ) { // Check for minimun required tokens
+          await discord.error( message.channel, { description: `You should have at least ${ TOKENS_REQUIRED.$gSAIL } gSAIL and ${ TOKENS_REQUIRED.$SAIL } SAIL`, });
+          return;
+        }
+
+        const { success, error, signature, } = await solanaConnect.transferSAIL(await Wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(id), amount, desc);
+
+        let msgToSender, msgToRecipient
+        if( success ) {
+          msgToSender    = `You sent ${amount} SAIL to <@!${id}>` + ( desc ? `\n\nDescription:\n${desc}` : '')
+          msgToRecipient = `You received ${amount} SAIL from <@!${ message.author.id }>` + ( desc ? `\n\nDescription:\n${desc}` : '')
+        } else {
+          msgToSender    = `Could not send SAIL to <@!${id}>\n\nError:\n${error}`
+          msgToRecipient = `Failed to receive SAIL from <@!${ message.author.id }>\n\nError:\n${error}`
+        }
+
+        // DM to sender
+        await discord.send( message.author, { title: 'Tip SAIL (Tx here)', description: msgToSender, url: solanaConnect.txLink(signature),});
         // DM to recipient
-        let fetchedUser = await client.users.fetch(elem, false);
-        await fetchedUser.send({
-          embeds: [new MessageEmbed()
-            .setColor(infoColor)
-            .setTitle('Tip SAIL')
-            .setDescription(msgToRecipient)]
-        });
-      } catch (error) {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+        let fetchedUser = await client.users.fetch(id, false);
+        await discord.send( fetchedUser, { title: 'Tip SAIL (Tx here)', description: msgToRecipient, url: solanaConnect.txLink(signature),});
       }
     }
 
-    try {
-      let tmpCache = await message.guild.emojis.cache;
-      const sail_emoji = tmpCache.find(emoji => emoji.name == SAIL_Emoji);
-      await message.react(sail_emoji);
-    } catch (error) {
-      console.log(`Sail emoji error.\n${error}\nstack: ${error.stack}`);
-    }
+    react( message, success, SAIL_Emoji );
     return;
-  } else if (command == "tipgsail") {
-    if (message.channel.type == "DM") {
+  } else if( command == "tipgsail" || command == "tg" ) {
+    if( message.channel.type == "DM" ) {
       return;
+    } else {
+      discord.deleteMessage( message, AUTOHIDE )
     }
 
     let validation = await Utils.validateForTipping(args, desc);
-    if (!validation.status) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(validation.msg)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
+    if( !validation.status ) {
+      await discord.error( message.channel, { description: validation.msg, });
       return;
     }
 
     let recipientIds = validation.ids;
     let amount = validation.amount.toFixed(9);
 
-    // get the balance of sol
-    const sol = await solanaConnect.getSolBalance(publicKey);
-    if (sol.amount < SOL_FEE_LIMIT) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`Not enough SOL fee to tip the GSAIL`)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-      return;
-    }
+    const { success, publicKey, sol, gSAIL, SAIL, } = await getBalances( message.author, message.channel);
 
-    // get the balance of gSAIL
-    const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
-    if (amount * recipientIds.length > gSAIL.amount) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`Not enough GSAIL`)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-      return;
-    }
-
-    if (amount < 0.000000001 || 100 < amount) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription('MIN: 0.000000001\nMAX: 100')]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-      return;
-    }
-
-    for (let i = 0; i < recipientIds.length; i++) {
-      const elem = recipientIds[i];
-
-      // if the recipient doesn't have the wallet
-      if (!await Wallet.getPublicKey(elem)) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`<@!${elem}> doesn't have the wallet`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
-        continue;
-      }
-
-      // get the balance of gSAIL
-      const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
-      // get the balance of SAIL
-      const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
-
-      if (gSAIL.amount < 1 || SAIL.amount < 1) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`You should have at least 1 gSAIL and 1 SAIL`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
+    if( success ) {
+      if ( sol.amount < SOL_FEE_LIMIT ) {
+        await discord.error( message.channel, { description: `Not enough SOL fee to tip the gSAIL`, });
         return;
       }
 
-      const {success, error, signature,} = await solanaConnect.transferGSAIL(await Wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(elem), amount, desc);
-
-      let msgToSender, msgToRecipient
-      if( success ) {
-        msgToSender    = `You sent ${amount} gSAIL to <@!${elem}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
-        msgToRecipient = `You received ${amount} gSAIL from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }` + ( desc ? `\n\nDescription:\n${desc}` : '')
-      } else {
-        msgToSender    = `Could not send gSAIL to <@!${elem}>\n\nError:\n${error}`
-        msgToRecipient = `Failed to receive gSAIL from <@!${message.author.id}>\n\nError:\n${error}`
+      if( amount * recipientIds.length > gSAIL.amount) {
+        await discord.error( message.channel, { description: `Not enough gSAIL`, });
+        return;
       }
-      // DM to sender
-      await message.author.send({
-        embeds: [new MessageEmbed()
-          .setColor(infoColor)
-          .setTitle('Tip gSAIL')
-          .setDescription(msgToSender)]
-      }).catch(error => {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      });
 
-      try {
+      if( amount < TOKEN_TIP_LIMITS.$gSAIL.min || TOKEN_TIP_LIMITS.$gSAIL.max < amount ) { // Check tipping limits
+        await discord.error( message.channel, { description: `Minimum amount: ${ TOKEN_TIP_LIMITS.$gSAIL.min }\nMaximum amount: ${ TOKEN_TIP_LIMITS.$gSAIL.max }`, });
+        return;
+      }
+
+      for( const id of recipientIds ) {
+        if( !await Wallet.getPublicKey(id) ) { // if the recipient doesn't have the wallet
+          await discord.error( message.channel, { description: `<@!${id}> doesn't have a wallet`, });
+          continue;
+        }
+
+        // Update the balance of gSAIL
+        // gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
+        // Update the balance of SAIL
+        // SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
+
+        if( gSAIL.amount < TOKENS_REQUIRED.$gSAIL || SAIL.amount < TOKENS_REQUIRED.$SAIL) { // Check for minimun required tokens
+          await discord.error( message.channel, { description: `You should have at least ${ TOKENS_REQUIRED.$gSAIL } gSAIL and ${ TOKENS_REQUIRED.$SAIL } SAIL`, });
+          return;
+        }
+
+        const { success, error, signature, } = await solanaConnect.transferGSAIL(await Wallet.getPrivateKey(message.author.id), await Wallet.getPublicKey(id), amount, desc);
+
+        let msgToSender, msgToRecipient
+        if( success ) {
+          msgToSender    = `You sent ${amount} gSAIL to <@!${id}>` + ( desc ? `\n\nDescription:\n${desc}` : '')
+          msgToRecipient = `You received ${amount} gSAIL from <@!${ message.author.id }>` + ( desc ? `\n\nDescription:\n${desc}` : '')
+        } else {
+          msgToSender    = `Could not send gSAIL to <@!${id}>\n\nError:\n${error}`
+          msgToRecipient = `Failed to receive gSAIL from <@!${ message.author.id }>\n\nError:\n${error}`
+        }
+
+        // DM to sender
+        await discord.send( message.author, { title: 'Tip gSAIL (Tx here)', description: msgToSender, url: solanaConnect.txLink(signature),});
         // DM to recipient
-        let fetchedUser = await client.users.fetch(elem, false);
-        await fetchedUser.send({
-          embeds: [new MessageEmbed()
-            .setColor(infoColor)
-            .setTitle('Tip gSAIL')
-            .setDescription(msgToRecipient)]
-        });
-      } catch (error) {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+        let fetchedUser = await client.users.fetch(id, false);
+        await discord.send( fetchedUser, { title: 'Tip gSAIL (Tx here)', description: msgToRecipient, url: solanaConnect.txLink(signature),});
       }
     }
 
-    try {
-      let tmpCache = await message.guild.emojis.cache;
-      const gsail_emoji = tmpCache.find(emoji => emoji.name == gSAIL_Emoji);
-      await message.react(gsail_emoji);
-    } catch (error) {
-      console.log(`gSail emoji error.\n${error}\nstack: ${error.stack}`);
-    }
+    react( message, success, gSAIL_Emoji );
     return;
-  } else if (command == "rainsail" || command == "raingsail") {
-    if (message.channel.type == "DM") {
+  } else if( command == "rainsail" || command == "raingsail" || command == "rs" || command == "rg" ) {
+    if( message.channel.type == "DM" ) {
       return;
+    } else {
+      discord.deleteMessage( message, AUTOHIDE )
     }
 
-    const label = (command == 'rainsail') ? 'SAIL' : 'gSAIL';
+    const label = ( command == 'rainsail' ) ? 'SAIL' : 'gSAIL';
 
     let validation = await Utils.validateForRaining(args);
-
-    if (!validation.status) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(validation.msg)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
+    if( !validation.status ) {
+      await discord.error( message.channel, { description: validation.msg, });
       return;
     }
 
-    let amount = validation.amount;
-    let maxPeople = validation.maxPeople;
+    let amount = Number(validation.amount);
+    let maxPeople = Number(validation.maxPeople);
 
-    // get the balance of SAIL
-    const SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(message.author.id));
-    // get the balance of gSAIL
-    const gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(message.author.id));
+    const { success, publicKey, sol, gSAIL, SAIL, } = await getBalances( message.author, message.channel);
 
-    // validate SAIL
-    if (label == "SAIL") {
-      if (amount > SAIL.amount) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`Not enough ${label}`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
+    if( success ) {
+
+      // validate SAIL
+      if( label == "SAIL" ) {
+        if( amount > SAIL.amount ) {
+          await discord.error( message.channel, { description: `Not enough ${label}`, });
+          return;
+        }
+
+        if( amount < TOKEN_RAIN_LIMITS.$SAIL.min || TOKEN_RAIN_LIMITS.$SAIL.max  < amount ) { //Check raining limits
+          await discord.error( message.channel, { description: `SAIL must be between ${ TOKEN_RAIN_LIMITS.$SAIL.min } and ${ TOKEN_RAIN_LIMITS.$SAIL.max }`, });
+          return;
+        }
+      }
+
+      // validate gSAIL
+      if( label == "gSAIL" ) {
+        if( amount > gSAIL.amount ) {
+          await discord.error( message.channel, { description: `Not enough ${label}`, });
+          return;
+        }
+
+        if( amount < TOKEN_RAIN_LIMITS.$gSAIL.min || TOKEN_RAIN_LIMITS.$gSAIL.max  < amount ) { //Check raining limits
+          await discord.error( message.channel, { description: `gSAIL must be between ${ TOKEN_RAIN_LIMITS.$gSAIL.min } and ${ TOKEN_RAIN_LIMITS.$gSAIL.max }`, });
+          return;
+        }
+      }
+
+      // validate the max people
+      if( maxPeople < 1 || TOKEN_RAIN_LIMITS.maxPeople <= maxPeople) {
+        await discord.error( message.channel, { description: `Max people must be between 1 to ${ TOKEN_RAIN_LIMITS.maxPeople }`, });
         return;
       }
 
-      if (amount < 1 || 1000 < amount) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`SAIL must be between 1 to 1000`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
-        return;
-      }
-    }
+      const transfer = ( label == 'SAIL')  ? solanaConnect.transferSAIL  :
+      ( label == 'gSAIL') ? solanaConnect.transferGSAIL :
+      ( label == 'SOL')   ? solanaConnect.transferSOL   : null; // in case rainsol is ever added ;D
 
-    // validate gSAIL
-    if (label == "gSAIL") {
-      if (amount > gSAIL.amount) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`Not enough ${label}`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
-        return;
+      const boardInfo = {
+        collector: null,
+        investor: message.author.id,
+        limit: maxPeople,
+        amount: 0,
+        users: [],
+        uiMain: null,
+        uiLog: null,
       }
 
-      if (amount < 1 || 100 < amount) {
-        await message.channel.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setDescription(`gSAIL must be between 1 to 100`)]
-        }).catch(error => {
-          console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-        });
-        return;
-      }
-    }
-
-    // validate the max people
-    if (maxPeople < 1 || 40 <= maxPeople) {
-      await message.channel.send({
-        embeds: [new MessageEmbed()
-          .setColor(dangerColor)
-          .setDescription(`Max people must be between 1 to 40`)]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
+      boardInfo.uiMain = await discord.send( message.channel, {
+        title: `Rain ${label}`,
+        description: `Do you like it?\n\n**Prize:** ${amount} ${label} **People:** ${ boardInfo.users.length } / ${maxPeople}`,
       });
-      return;
-    }
+      await boardInfo.uiMain.react('✅');
 
-    const transfer = ( label == 'SAIL')  ? solanaConnect.transferSAIL  :
-                     ( label == 'gSAIL') ? solanaConnect.transferGSAIL :
-                     ( label == 'SOL')   ? solanaConnect.transferSOL   : null; // in case rainsol is ever added ;D
-
-    const boardInfo = {
-      collector: null,
-      investor: message.author.id,
-      limit: maxPeople,
-      amount: 0,
-      users: [],
-      uiMain: null,
-      uiLog: null,
-    }
-
-    boardInfo.uiMain = await message.channel.send({
-      embeds: [new MessageEmbed()
-        .setTitle(`Rain ${label}`)
-        .setColor(infoColor)
-        .setDescription(`Do you like it?\n\n**Prize:** ${amount} ${label} **People:** ${boardInfo.users.length} / ${maxPeople}`)
-      ]
-    }).catch(error => {
-      console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-    });
-    await boardInfo.uiMain.react("✅");
-
-    if( message.channel.id !=  LOG_CHANNEL_ID ) {
-      boardInfo.uiLog = await guild.channels.cache.get(LOG_CHANNEL_ID).send({
-        embeds: [new MessageEmbed()
-          .setColor(infoColor)
-          .setDescription(`**Rain ${label} from ${message.author}**`)
-          .setAuthor({ name: 'TipBot', url: boardInfo.uiMain.url })
-          .addFields(
+      if( message.channel.id !=  LOG_CHANNEL_ID ) {
+        boardInfo.uiLog = await discord.send( await guild.channels.cache.get(LOG_CHANNEL_ID), {
+          author: { name: 'TipBot', url: boardInfo.uiMain.url },
+          description: `**Rain ${label} from ${ message.author }**`,
+          fields: [
             { name: `Prize`, value: `${amount} ${label}`, inline: true },
-            { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },
-          )
-          .setTimestamp()
-        ]
-      }).catch(error => {
-        console.log(`Cannot send messages.\n${error}\nstack: ${error.stack}`);
-      });
-    } else {
-      boardInfo.uiLog = boardInfo.uiMain
+            { name: `People`, value: `${ boardInfo.users.length } / ${maxPeople}`, inline: true },
+          ],
+          timestamp: true,
+        });
+      } else {
+        boardInfo.uiLog = boardInfo.uiMain
+      }
+
+      const filter = (reaction, user) => !user.bot && user.id != boardInfo.investor && ["✅"].includes(reaction.emoji.name);
+      boardInfo.collector = boardInfo.uiMain.createReactionCollector({ filter });
+
+      boardInfo.collector.on( 'collect', async (reaction, user) => {
+        if (boardInfo.users.findIndex( u => u.id == user.id) != -1 || boardInfo.limit <= boardInfo.users.length) {
+          return;
+        }
+        boardInfo.users.push(user); // Prevent the user from getting this rain again, We're assuming that transaction will succeed
+
+        const from = await Wallet.getPrivateKey(boardInfo.investor),
+              to = await Wallet.getPublicKey(user.id)
+        console.assert( from, `investor's wallet not found` )
+
+        let fetchedUser = await client.users.fetch(user.id, false);
+        if( !to ) {
+          await discord.error( message.channel, {
+            title: `Rain ${label} Error`,
+            description: `You need to use \`${COMMAND_PREFIX}register-wallet\` or \`${COMMAND_PREFIX}import-wallet\` first. Try \`${COMMAND_PREFIX}helptip\` if you need help`,
+            autoHide: AUTOHIDE,
+          } );
+          removeItem( boardInfo.users, user ) // Transaction didn't occur, let's allow trying again after they register a wallet
+          return;
+        }
+
+        let { success, error, signature, } = await transfer( from, to, amount / maxPeople, `Rain ${label}` )
+        if( !success ) {
+          console.log(`Error while raining ${label}!.\n${error}\nstack: ${error.stack}`)
+          removeItem( boardInfo.users, user ) // Transaction failed, let's allow the user to try again
+
+          await discord.error( fetchedUser, { title: `Rain ${label} Error`, description: String(error), });
+          return;
+        }
+
+        const msg = `You received ${ amount / maxPeople } ${label} from <@!${ message.author.id }>`
+        await discord.send( fetchedUser, { // DM to recipient
+          title: `Rain ${label} (Tx here)`, description: msg, url: solanaConnect.txLink(signature),
+        });
+
+        let userList = ''
+        for( const user of boardInfo.users ) {
+          userList += user.username + '\n'
+        }
+
+        if( boardInfo.uiMain != boardInfo.uiLog ) {
+          discord.edit( boardInfo.uiMain, {
+            title: `Rain ${label}`,
+            description: `**Prize:** ${amount} ${label} **People:** ${ boardInfo.users.length } / ${maxPeople}`,
+          }).catch( error => {
+            console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+          })
+        }
+
+        discord.edit( boardInfo.uiLog, {
+            title: `Rain ${label}`,
+            author: { name: 'TipBot', url: boardInfo.uiMain.url },
+            description: `**Rain ${label} from ${ message.author }**`,
+            fields: [
+              { name: `Receivers`, value: userList.slice(-1024) }, // Removes the excess chars. Discord only allows max 1024 per field
+              { name: `Prize`,     value: `${amount} ${label}`,                         inline: true },
+              { name: `People`,    value: `${ boardInfo.users.length } / ${maxPeople}`, inline: true },
+              { name: `Each`,      value: `${ amount / maxPeople } ${label}`,           inline: true },
+            ],
+            timestamp: true,
+        } ).catch( error => {
+          console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
+        } )
+      })
     }
-
-    const filter = (reaction, user) => !user.bot && user.id != boardInfo.investor && ["✅"].includes(reaction.emoji.name);
-    boardInfo.collector = boardInfo.uiMain.createReactionCollector({ filter });
-
-    boardInfo.collector.on('collect', async (reaction, user) => {
-      if (boardInfo.users.findIndex((elem) => elem.id == user.id) != -1 || boardInfo.limit <= boardInfo.users.length) {
-        return;
-      }
-      boardInfo.users.push(user); // Prevent the user from getting this rain again, We're assuming that transaction will succeed
-
-      const from = await Wallet.getPrivateKey(boardInfo.investor),
-            to = await Wallet.getPublicKey(user.id)
-      console.assert( from, `investor's wallet not found` )
-
-      let fetchedUser = await client.users.fetch(user.id, false);
-      if( !to ) {
-         await fetchedUser.send({
-           embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setTitle(`Rain ${label} Error`)
-            .setDescription(`You need to use \`${COMMAND_PREFIX}register-wallet\` or \`${COMMAND_PREFIX}import-wallet\` first. Try \`${COMMAND_PREFIX}helptip\` if you need help`)
-          ]
-        }).catch(error => {
-          console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-        })
-        _removeItem( boardInfo.users, user ) // Transaction didn't occur, let's allow trying again after they register a wallet
-        return;
-      }
-
-      let {success, error, signature,} = await transfer( from, to,
-                                                            amount / maxPeople, `Rain ${label}` )
-      if( !success ) {
-        console.log(`Error while raining ${label}!.\n${error}\nstack: ${error.stack}`)
-        _removeItem( boardInfo.users, user ) // Transaction failed, let's allow the user to try again
-
-        await fetchedUser.send({
-          embeds: [new MessageEmbed()
-            .setColor(dangerColor)
-            .setTitle(`Rain ${label} Error`)
-            .setDescription(String(error))
-          ]
-        }).catch(error => {
-          console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-        })
-
-        return;
-      }
-
-      const msg = `You received ${amount / maxPeople} ${label} from <@!${message.author.id}>\nTransaction: ${ solanaConnect.txLink(signature) }`
-      await fetchedUser.send({ // DM to recipient
-        embeds: [new MessageEmbed()
-          .setColor(infoColor)
-          .setTitle(`Rain ${label}`)
-          .setDescription(msg)
-        ]
-      }).catch(error => {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      })
-
-      let userList = ''
-      for (let i = 0; i < boardInfo.users.length; i++) {
-        const user = boardInfo.users[i];
-        userList += user.username + '\n'        
-      }
-
-      if( boardInfo.uiMain != boardInfo.uiLog ) {
-        boardInfo.uiMain.edit({
-          embeds: [new MessageEmbed()
-            .setTitle(`Rain ${label}`)
-            .setColor(infoColor)
-            .setDescription(`**Prize:** ${amount} ${label} **People:** ${boardInfo.users.length} / ${maxPeople}`)
-          ]
-        }).catch(error => {
-          console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-        })
-      }
-
-      boardInfo.uiLog.edit({
-        embeds: [new MessageEmbed()
-          .setColor(infoColor)
-          .setAuthor({ name: 'TipBot', url: boardInfo.uiMain.url })
-          .setDescription(`**Rain ${label} from ${message.author}**`)
-          .addFields(
-            { name: `Receivers`, value: userList.slice(-1024) }, // Removes the excess chars. Discord allows max 1024 per field
-            { name: `Prize`, value: `${amount} ${label}`, inline: true },
-            { name: `People`, value: `${boardInfo.users.length} / ${maxPeople}`, inline: true },            
-            { name: `Each`, value: `${amount / maxPeople} ${label}`, inline: true },
-          )
-          .setTimestamp()
-        ]
-      }).catch(error => {
-        console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
-      })
-    })
   }
 });
+
+async function react( message, success, emojiName ) {
+  try {
+    let tmpCache = await message.guild.emojis.cache;
+    const emoji = tmpCache.find(emoji => emoji.name == emojiName);
+    if( success ) {
+      await message.react(emoji); 
+    } else {
+      await message.react('❌');
+    }
+  } catch( error ) {
+    console.log(`Emoji (${emojiName}) error.\n${error}\nstack: ${error.stack}`);
+  }
+}
+
+async function getBalances( user, channel ) {
+  let publicKey = null, sol = null, gSAIL = null, SAIL = null;
+
+  try {
+
+    if( !(await Wallet.getPrivateKey(user.id)) ) { // Wallet not created or registered, PK unnaccesible
+      discord.error( channel, { title: `${ user.tag }`,
+                      description: `You must register or import your wallet before using the bot\n\n**This must be done in a private DM channel!**`,
+      } )
+      return { success: false, };
+    }
+
+    publicKey = await Wallet.getPublicKey(user.id);
+
+    // get the balance of sol
+    sol = await solanaConnect.getSolBalance(publicKey);
+    // get the balance of gSAIL
+    gSAIL = await solanaConnect.getGSAILBalance(await Wallet.getPrivateKey(user.id));
+    // get the balance of SAIL
+    SAIL = await solanaConnect.getSAILBalance(await Wallet.getPrivateKey(user.id));
+
+  } catch( error ) {
+    console.log(`Error getting balances: \n${error}\nstack: ${error.stack}`);
+    return { success: false, };
+  }
+  return { success: true, publicKey, sol, gSAIL, SAIL, }
+}
 
 try {
   // Login to Discord with your client's token
   client.login(DISCORD_TOKEN);
-} catch (e) {
-  console.error(`Client has failed to connect to discord..\n${e}\nstack: ${e.stack}`);
-  process.exit(1);
+} catch( error ) {
+  console.error(`Client has failed to connect to discord..\n${error}\nstack: ${error.stack}`);
+  process.exit(6);
 }

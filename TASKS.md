@@ -1,24 +1,33 @@
-# FIRST TASKS
+# DONE
 
-- [ ] Cleaner code, messages more centralized and homogeneous
+- [x] Clean/simplify code
 
-- [ ] Sanitize thoroughly the inputs
+    - [x] Fixed several errors
 
-- [ ] More ergonomic commands (eg, short version or alias) and any caps
+    - [x] Error management improved
 
-- [ ] (configurable, ON/OFF) Send an appropriate copy of the TX messages to a different channel to serve as a TX log where
-      another bot can extract useful statistics etc
+- [x] Modify the limits in the tip and rain commands. Now using a variable on the config file.
 
-- [ ] Support more tokens, preferably taken from the official Solana list (eg, SOLAB)
+- [x] Implement aliases for commonly-used commands
 
-- [ ] Allow to set limits & settings for each token in a CONFIG file, make it so the bot doesn't have to be restarted when it changes
+     - `helptip` = `h`,
+     - `balance` = `b`,
+     - `import-wallet` = `iw`,
+     - `register-wallet` = `rw`,
+     - `tipsail` = `ts`,
+     - `tipgsail` = `tg`,
+     - `rainsail` = `rs`,
+     - `raingsail` = `rg`
 
-      Right now we are using this consts from CONFIG: SOL_FEE_LIMIT, SAIL_Emoji, gSAIL_Emoji, SOL_Emoji and
-      some code (specific functions) to operate with a token and deal with min and max allowed amounts
-      SOL:   MIN: 0.000001    MAX: 5
-      SAIL:  MIN: 0.000001    MAX: 1000
-      gSAIL: MIN: 0.000000001 MAX: 100
+- [x] Impove text and design of the messages (also using a better helper to send Discord messages)
 
-- [ ] Implement queueing to better deal with transactions exceeding RPC or Discord API limits
+- [x] Automatically disappear error messages (command errors, etc) after a reasonable time
 
-- [ ] Implement some checks during transactions including fat-finger protection or requiring confirmation in some cases (for large amounts)
+- [x] Automatically disappear user commands (ie, the original message from the user), to avoid cluttering the channel
+
+- [ ] Implement a new command (info) to show useful info:
+
+    - [X] Supported tokens, with some details
+    - [ ] Uptime of the bot
+
+## As usual, updated with the latest updates from other bots
