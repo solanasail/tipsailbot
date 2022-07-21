@@ -24,9 +24,16 @@ export const EXPECTED_ROLES=[
   '@everyone'
 ]
 
-export const HELP_MSG = 'HELP_MSG_LINK'
-export const dangerColor = '#d93f71';
-export const infoColor = '#0099ff';
+export const HELPMSG_URL = 'HELPMSG_URL'
+
+export const dangerColor = '#d93f71'
+export const infoColor   = '#0099ff'
+
+export const INTERVAL = {
+  short:  60*1000,
+  normal:  5*60*1000,
+  long:   24*60*60*1000,
+}
 
 // Tokens and BC Settings
 export const ACTIVE_CLUSTER=CLUSTERS.DEVNET;

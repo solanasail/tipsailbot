@@ -15,14 +15,15 @@ import {
   GUILD_ID,
   DISCORD_TOKEN,
   LOG_CHANNEL_ID,
-  HELP_MSG,
+  HELPMSG_URL,
+  INTERVAL,
 
   SAIL_Emoji, gSAIL_Emoji, SOL_Emoji,
   TRANSACTION_DESC,
 } from './config/index.js'
 
 import Utils from './src/utils.js'
-import { discord, removeItem, AUTOHIDE, secondsToHMS, } from './src/utils.js'
+import { discord, removeItem, msToHMS, } from './src/utils.js'
 
 import DB from './src/publicKeyStorage/index.js'
 
@@ -83,13 +84,13 @@ client.on('messageCreate', async (message) => {
   // Ignore the message if the command is not in the list of registered commands
   if( BOT_COMMANDS.findIndex( cmd => cmd === command) == -1 ) {
     await discord.error( message.channel, {
-      description: `Command "${command}" not valid!\n\n`+
+      description: `"${command}" is not a valid command!\n\n`+
                    `Valid commands: helptip, info, balance, import-wallet, register-wallet, tipsol, tipsail, tipgsail, rainsail, raingsail\n\n`+
-                   `Please type ?helptip or read about it on [❓│faq](${HELP_MSG})`,
+                   `Please type ?helptip or read about it on [❓│faq](${HELPMSG_URL})`,
     });
 
     if( message.channel.type != "DM" ) {
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.short )
     }
 
     return;
@@ -97,10 +98,10 @@ client.on('messageCreate', async (message) => {
 
   if( command == "info" ) {
     if( message.channel.type != "DM" ) {
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.short )
     }
 
-    let text = `** TipBot uptime:** ${ secondsToHMS(client.uptime) }\n\n` +
+    let text = `** TipBot uptime:** ${ msToHMS(client.uptime) }\n\n` +
                `** TipBot ready at:** ${ client.readyAt }\n\n` +
                `** Active Cluster:** ${ACTIVE_CLUSTER}\n\n` +
                `** TipBot supported tokens:**\n\n`
@@ -113,7 +114,7 @@ client.on('messageCreate', async (message) => {
     discord.send( message.channel, {
       title: `Useful info`,
       description: text,
-      autoHide: AUTOHIDE,
+      autoHide: INTERVAL.short,
     });
     return;
 
@@ -121,7 +122,7 @@ client.on('messageCreate', async (message) => {
 
     if( message.channel.type != "DM" ) {
       await discord.error( message.channel, { description: `This must be done in a private DM channel` } )
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.short )
       return;
     }
 
@@ -149,7 +150,7 @@ client.on('messageCreate', async (message) => {
 
     if( message.channel.type != "DM" ) {
       await discord.error( message.channel, { description: `This must be done in a private DM channel`, });
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.short )
       return;
     }
 
@@ -192,7 +193,7 @@ client.on('messageCreate', async (message) => {
   } else if( command == "helptip" || command == "h") { // Display help
 
     if( message.channel.type != "DM" ) {
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.short )
     }
 
     let title = `TiSailBot Help`;
@@ -221,9 +222,9 @@ client.on('messageCreate', async (message) => {
 
     await discord.send( message.author, {
       title,
-      url: HELP_MSG,
+      url: HELPMSG_URL,
       description: text,
-      autoHide: AUTOHIDE.max,
+      autoHide: INTERVAL.normal,
     });
 
     return;
@@ -231,7 +232,7 @@ client.on('messageCreate', async (message) => {
 
   if( command == "balance" || command == "b" ) { // See your current available and pending balance.
     if( message.channel.type != "DM" ) {
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.short )
     }
 
     const { success, publicKey, sol, gSAIL, SAIL, } = await getBalances( message.author, message.channel );
@@ -253,12 +254,13 @@ client.on('messageCreate', async (message) => {
     if( message.channel.type == "DM" ) {
       return;
     } else {
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.long ) // TOUPDATE !
     }
 
     let validation = await Utils.validateForTipping(args, desc);
     if( !validation.status ) {
       await discord.error( message.channel, { description: validation.msg, });
+      discord.react( message, undefined, undefined );
       return;
     }
 
@@ -307,18 +309,19 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    react( message, success, SOL_Emoji );
+    discord.react( message, SOL_Emoji, success );
     return;
   } else if ( command == "tipsail" || command == "ts" ) {
     if( message.channel.type == "DM" ) {
       return;
     } else {
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.long ) // TOUPDATE !
     }
 
     let validation = await Utils.validateForTipping(args, desc);
     if( !validation.status ) {
       await discord.error( message.channel, { description: validation.msg, });
+      discord.react( message, undefined, undefined );
       return;
     }
 
@@ -378,18 +381,19 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    react( message, success, SAIL_Emoji );
+    discord.react( message, SAIL_Emoji, success );
     return;
   } else if( command == "tipgsail" || command == "tg" ) {
     if( message.channel.type == "DM" ) {
       return;
     } else {
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.long ) // TOUPDATE !
     }
 
     let validation = await Utils.validateForTipping(args, desc);
     if( !validation.status ) {
       await discord.error( message.channel, { description: validation.msg, });
+      discord.react( message, undefined, undefined );
       return;
     }
 
@@ -449,13 +453,13 @@ client.on('messageCreate', async (message) => {
       }
     }
 
-    react( message, success, gSAIL_Emoji );
+    discord.react( message, gSAIL_Emoji, success );
     return;
   } else if( command == "rainsail" || command == "raingsail" || command == "rs" || command == "rg" ) {
     if( message.channel.type == "DM" ) {
       return;
     } else {
-      discord.deleteMessage( message, AUTOHIDE )
+      discord.deleteMessage( message, INTERVAL.long ) // TOUPDATE !
     }
 
     const label = ( command == 'rainsail' ) ? 'SAIL' : 'gSAIL';
@@ -472,6 +476,12 @@ client.on('messageCreate', async (message) => {
     const { success, publicKey, sol, gSAIL, SAIL, } = await getBalances( message.author, message.channel);
 
     if( success ) {
+
+      // if ( sol.amount < SOL_FEE_LIMIT ) {
+      if ( sol.amount < maxPeople * SOL_FEE_LIMIT ) {        
+        await discord.error( message.channel, { description: `Not enough SOL (fees) to make rain`, });
+        return;
+      }      
 
       // validate SAIL
       if( label == "SAIL" ) {
@@ -520,7 +530,7 @@ client.on('messageCreate', async (message) => {
       }
 
       boardInfo.uiMain = await discord.send( message.channel, {
-        title: `Rain ${label}`,
+        title: `**Rain ${label} from ${ message.author.username }**`,
         description: `Do you like it?\n\n**Prize:** ${amount} ${label} **People:** ${ boardInfo.users.length } / ${maxPeople}`,
       });
       await boardInfo.uiMain.react('✅');
@@ -557,7 +567,7 @@ client.on('messageCreate', async (message) => {
           await discord.error( message.channel, {
             title: `Rain ${label} Error`,
             description: `You need to use \`${COMMAND_PREFIX}register-wallet\` or \`${COMMAND_PREFIX}import-wallet\` first. Try \`${COMMAND_PREFIX}helptip\` if you need help`,
-            autoHide: AUTOHIDE,
+            autoHide: INTERVAL.short,
           } );
           removeItem( boardInfo.users, user ) // Transaction didn't occur, let's allow trying again after they register a wallet
           return;
@@ -584,7 +594,7 @@ client.on('messageCreate', async (message) => {
 
         if( boardInfo.uiMain != boardInfo.uiLog ) {
           discord.edit( boardInfo.uiMain, {
-            title: `Rain ${label}`,
+            title: `**Rain ${label} from ${ message.author.username }**`,
             description: `**Prize:** ${amount} ${label} **People:** ${ boardInfo.users.length } / ${maxPeople}`,
           }).catch( error => {
             console.log(`Cannot send messages to this user.\n${error}\nstack: ${error.stack}`);
@@ -592,7 +602,7 @@ client.on('messageCreate', async (message) => {
         }
 
         discord.edit( boardInfo.uiLog, {
-            title: `Rain ${label}`,
+            // title: `Rain ${label}`,
             author: { name: 'TipBot', url: boardInfo.uiMain.url },
             description: `**Rain ${label} from ${ message.author }**`,
             fields: [
@@ -609,20 +619,6 @@ client.on('messageCreate', async (message) => {
     }
   }
 });
-
-async function react( message, success, emojiName ) {
-  try {
-    let tmpCache = await message.guild.emojis.cache;
-    const emoji = tmpCache.find(emoji => emoji.name == emojiName);
-    if( success ) {
-      await message.react(emoji); 
-    } else {
-      await message.react('❌');
-    }
-  } catch( error ) {
-    console.log(`Emoji (${emojiName}) error.\n${error}\nstack: ${error.stack}`);
-  }
-}
 
 async function getBalances( user, channel ) {
   let publicKey = null, sol = null, gSAIL = null, SAIL = null;

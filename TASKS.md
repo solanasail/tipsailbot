@@ -19,15 +19,15 @@
      - `rainsail` = `rs`,
      - `raingsail` = `rg`
 
-- [x] Impove text and design of the messages (also using a better helper to send Discord messages)
+- [x] Improve text and design of the messages (also using a better helper to send Discord messages)
 
 - [x] Automatically disappear error messages (command errors, etc) after a reasonable time
 
 - [x] Automatically disappear user commands (ie, the original message from the user), to avoid cluttering the channel
 
-- [ ] Implement a new command (info) to show useful info:
+- [x] Implement a new command (info) to show useful info:
 
-    - [X] Supported tokens, with some details
-    - [ ] Uptime of the bot
+    - [x] Supported tokens, with some details
+    - [x] Uptime and Start (time) of the bot
 
 ## As usual, updated with the latest updates from other bots
