@@ -5,18 +5,11 @@ import {
   COMMAND_PREFIX,
   TIP_DESC_LIMIT,
   EXPECTED_ROLES,
+  TOKEN_RAIN_LIMITS,
 } from '../config/index.js'
 
 const dangerColor = '#d93f71';
 const infoColor = '#0099ff';
-
-export const AUTOHIDE = {
-  min:     10_000,
-  default: 40_000,
-  max:     100_000,
-
-  toString: _ => AUTOHIDE.default,
-}
 
 const string2Uint8Array = async (str) => {
   var decodedString;
@@ -115,10 +108,10 @@ const validateForRaining = async (args) => {
   }
 
   // validate the number of people
-  if( isNaN(maxPeople) || maxPeople <= 0 ) {
+  if( isNaN(maxPeople) || maxPeople <= 0 || maxPeople > TOKEN_RAIN_LIMITS.maxPeople) {
     return {
       status: false,
-      msg: `Invalid number of people\n${COMMAND_PREFIX}rain<type> <amount> <max people>`,
+      msg: `Invalid number of people\n${COMMAND_PREFIX}rain<type> <amount> <max people>\nRemember: Max people limit is ${TOKEN_RAIN_LIMITS.maxPeople}`,
     };
   }
 
@@ -162,6 +155,14 @@ const checkRoleInPrivate = async (guild, message) => {
   return satisfiedCount == EXPECTED_ROLES.length;
 }
 
+export const AUTOHIDE = {
+  min:     15_000,
+  default: 60_000,
+  max:     100_000,
+
+  toString: _ => AUTOHIDE.default,
+}
+
 let   timer = 0,
       delete_queue = []
 
@@ -175,9 +176,7 @@ function fn_Deleter() {
         empty++
       } else if( now >= item.stamp ) {
         delete delete_queue[i]
-        item.message.channel.messages.fetch( item.message.id )
-          .then( msg => msg.delete() )
-          .catch( error => console.log(`Cannot delete the message.\n${error}\nstack: ${error.stack}`) )
+        discord.deleteMessage( item.message, 0 )
       }
     }
     if( empty > 50 ) { // since delete_queue is long lived we need to be more careful with the cleaning up
@@ -258,9 +257,8 @@ export const discord = {
           if( typeof autoHide !== 'number' ) {
             autoHide = AUTOHIDE.default
           }
-          setTimeout( _ => result.delete(), autoHide )
+          discord.deleteMessage( result, autoHide )
         }
-        // console.log('Result:', result);
         return result;
       }
   },
@@ -268,7 +266,8 @@ export const discord = {
   async error( to, options = {} ) {
     console.assert( typeof to?.send === 'function' )
     // TODO maybe regex check .text for details to remove? like wallets, callstacks, etc?
-    return await discord.action( 'send', to, {...options, color: dangerColor, title: 'Error', autoHide: true,} )
+    // return await discord.action( 'send', to, {...options, color: dangerColor, title: 'Error', autoHide: true,} )
+    return await discord.action( 'send', to, {...options, color: dangerColor, title: 'Error', autoHide: AUTOHIDE,} )
   },
   async send( to, options = {} ) {
     console.assert( typeof to?.send === 'function' )
@@ -280,13 +279,42 @@ export const discord = {
     return await discord.action( 'edit', target, options )
   },
 
-  deleteMessage( message, ms ) {
+  deleteMessage( message, ms = 0 ) {
+    console.assert( typeof message === 'object' )
+    // console.assert( message.constructor.name === 'Message' )
+    console.assert( message.constructor.name === 'Message' || message.partial )
+    console.assert( !isNaN(ms) )
+
+    if( ms == 0 ) {
+      message.channel.messages.fetch( message.id )
+        .then( msg => msg.delete() )
+        .catch( error => console.log( `Cannot delete the message.\n${error}\nstack: ${error.stack}` ) )
+      return;
+    }
+
     delete_queue.push( { message, stamp: Date.now() + ms, } )
     if( !timer ) {
       timer = setInterval( fn_Deleter, 5_000 )
     }
   },
+  
+  async react( message, emojiName, success ) {
+    console.assert( typeof message === 'object' )
+    console.assert( message.constructor.name === 'Message' )
+    console.assert( emojiName )
 
+    try {
+      let tmpCache = await message.guild.emojis.cache;
+      const emoji = tmpCache.find( emoji => emoji.name == emojiName );
+      if( success ) {
+        await message.react(emoji); 
+      } else {
+        await message.react('❌');
+      }
+    } catch( error ) {
+      console.log(`Emoji (${emojiName}) error.\n${error}\nstack: ${error.stack}`);
+    }
+  },
 }
 
 export function removeItem( array, item ) {
@@ -296,16 +324,20 @@ export function removeItem( array, item ) {
   array.splice( idx, 1 )
 }
 
-export function secondsToHMS( totalSeconds ) { // TODO use a standar library instead
+export function msToHMS( uptime ) { 
 
-  let days = Math.floor( totalSeconds / 86400 ); // 60*60*24
-  totalSeconds %= 86400;
-  let hours = Math.floor( totalSeconds / 3600 );
-  totalSeconds %= 3600;
-  let minutes = Math.floor( totalSeconds / 60 );
-  let seconds = Math.floor( totalSeconds % 60 );
+  let _seconds = uptime / 1000
+
+  const days = Math.floor( _seconds / (60*60*24) )
+  _seconds %= (60*60*24)
+
+  const hours = Math.floor( _seconds / (60*60) )
+  _seconds %= (60*60)
+
+  const minutes = Math.floor( _seconds / 60 )
+  const seconds = Math.floor( _seconds % 60 )
   
-  return `${days} days, ${hours} hours, ${minutes} minutes and ${seconds} seconds`;
+  return `${days}d, ${hours}:${minutes} and ${seconds}s`;
 }
 
 export default {
@@ -323,5 +355,4 @@ export default {
   discord,
   embed: discord.embed,
   send: discord.send,
-  edit: discord.edit,
 }
