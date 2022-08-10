@@ -462,7 +462,7 @@ client.on('messageCreate', async (message) => {
       discord.deleteMessage( message, INTERVAL.long ) // TOUPDATE !
     }
 
-    const label = ( command == 'rainsail' ) ? 'SAIL' : 'gSAIL';
+    const label = ( command == 'rainsail' || command == 'rs' ) ? 'SAIL' : 'gSAIL';
 
     let validation = await Utils.validateForRaining(args);
     if( !validation.status ) {
